@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<xml>
+    <Name value="1-XNPCVoiceControl" />
+    <DisplayName value="XNPC Voice Control" />
+    <Version value="3.0.09" />
+    <Description value="Control NPC companions and chat with NPCs" />
+    <Author value="Xyth" />
+    <Website value="" />
+</xml>

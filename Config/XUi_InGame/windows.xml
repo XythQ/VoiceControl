@@ -1,0 +1,192 @@
+<!--
+    NPCVoiceControl - In-Game Configuration UI (3.0)
+
+    Defines the configuration window and subtitle overlay for XNPCVoiceControl settings.
+    Window groups and menu registration are in xui.xml.
+
+    3.0 ONLY loads from Config/XUi_InGame/, XUi_Common/, XUi_Menu/.
+    Config/XUi/ is NOT loaded.
+
+    Layout columns (panel width 640):
+      Label   : pos="10,-9"   width="220"   (left column, centers in 34px cell)
+      Combobox: pos="235,-4"  width="390"   (right column, 26px control in 34px cell)
+      Toggle  : pos="465,-4"  width="165"   (right-pinned, 26px control in 34px cell)
+
+    Row budget: 20 items x 34px = 680px grid content. No spacers - section breaks
+    are implied by the logical grouping of controls.
+-->
+<configs>
+
+    <!-- Append our settings button into the vanilla ingameMenu buttons grid (3.0) -->
+    <append xpath="//window[@name='ingameMenu']/grid[@name='buttons']">
+        <simplebutton name="btnXNPCVoiceControlConfig" depth="3" width="250" height="46"
+                      caption="NPC VoiceControl Settings" font_size="34"/>
+    </append>
+
+    <!-- Main configuration window: 800px tall, centered, fits 1080p. 40px header reserved. -->
+    <append xpath="/windows">
+        <window name="windowXNPCVoiceControlConfig" depth="99" width="720" height="800"
+                pos="-360,400" anchor="CenterCenter" cursor_area="true" controller="XUiC_XNPCVoiceControlConfig, 1-XNPCVoiceControl">
+
+            <panel depth="3" name="content" pos="0,0" width="720" height="800" backgroundcolor="0,0,0,0">
+
+                <!-- Semi-transparent background fill -->
+                <sprite depth="1" name="bg" sprite="menu_empty" type="sliced" color="0,0,0,220"
+                        pos="0,0" width="720" height="800"/>
+
+                <!-- Header (on the first line, above the grid) -->
+                <label depth="15" pos="20,-10" width="680" height="32" text="NPC AI Chat Configuration"
+                       font_size="24" justify="center"/>
+
+                <!-- Close button -->
+                <simplebutton enabled="true" name="btnClose" pos="674,-10" width="36" height="32" depth="15"
+                              caption="X" font_size="18"/>
+
+                <!-- Settings grid: starts below the 40px header -->
+                <grid name="settingsGrid" depth="10" pos="35,-46" cols="1" width="640" height="748"
+                      cell_width="640" cell_height="34" arrangement="vertical" repeat_content="false">
+
+                    <!-- TTS Enable -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Text-to-Speech" font_size="16" style="label_outline"/>
+                        <togglebutton enabled="true" name="toggleTTS" pos="465,-4" width="165" height="26" depth="3"
+                                      font_size="15" caption="Enabled"/>
+                    </panel>
+
+                    <!-- Volume -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Volume" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderVolume" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="0.0" value_max="1.0" value_increment="0.1" format_string="0.0"/>
+                    </panel>
+
+                    <!-- Speech Rate -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Speech Rate" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderSpeechRate" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="0.5" value_max="2.0" value_increment="0.1" format_string="0.0"/>
+                    </panel>
+
+                    <!-- STT Enable -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Speech-to-Text" font_size="16" style="label_outline"/>
+                        <togglebutton enabled="true" name="toggleSTT" pos="465,-4" width="165" height="26" depth="3"
+                                      font_size="15" caption="Enabled"/>
+                    </panel>
+
+                    <!-- Wake Word Enable -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Wake Word (Hands-Free)" font_size="16" style="label_outline"/>
+                        <togglebutton enabled="true" name="toggleWakeWord" pos="465,-4" width="165" height="26" depth="3"
+                                      font_size="15" caption="Enabled"/>
+                    </panel>
+
+                    <!-- Beam Size -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Beam Size (1-5)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderBeamSize" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="1.0" value_max="5.0" value_increment="1.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Speech Recognition Model -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Speech Recognition" font_size="16" style="label_outline"/>
+                        <simplebutton enabled="true" name="btnSpeechModel" pos="235,-4" width="390" height="26" depth="3"
+                                      font_size="15" caption="Accurate"/>
+                    </panel>                    <!-- Loaded AI Model -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Loaded AI Model" font_size="16" style="label_outline"/>
+                        <textfield enabled="false" name="txtModel" pos="235,-4" width="395" height="26" depth="3"
+                                   font_size="16" text="loading..."/>
+                    </panel>
+
+                    <!-- Max Tokens -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Max Tokens (64-2048)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderMaxTokens" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="64.0" value_max="2048.0" value_increment="64.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Context Window -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Context Window (3-20)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderMaxHistory" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="3.0" value_max="20.0" value_increment="1.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Chat Distance -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Chat Distance (3-15m)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderChatDistance" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="3.0" value_max="15.0" value_increment="1.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Hired Chat Distance -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Hired Chat Distance (5-30m)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderHiredChatDistance" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="5.0" value_max="40.0" value_increment="1.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Chat Inactivity Timeout -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Chat Timeout (15-120s)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderChatTimeout" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="15.0" value_max="120.0" value_increment="5.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Voice Range -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Voice Range (5-20m)" font_size="16" style="label_outline"/>
+                        <combobox enabled="true" type="ComboBoxFloat" name="sliderVoiceDistance" pos="235,-4" width="390" height="26" depth="3"
+                                  value_min="5.0" value_max="20.0" value_increment="1.0" format_string="0"/>
+                    </panel>
+
+                    <!-- Debug Logging -->
+                    <panel width="640" height="34">
+                        <label pos="10,-9" width="220" text="Mod Debug Logging" font_size="16" style="label_outline"/>
+                        <togglebutton enabled="true" name="toggleDebug" pos="465,-4" width="165" height="26" depth="3"
+                                      font_size="15" caption="Enabled"/>
+                    </panel>
+
+                    <!-- Test buttons -->
+                    <simplebutton enabled="true" name="btnTestTTS" width="640" height="28" depth="3"
+                                  font_size="15" caption="Test Voice"/>
+
+                    <simplebutton enabled="true" name="btnTestSTT" width="640" height="28" depth="3"
+                                  font_size="15" caption="Test Microphone"/>
+
+                    <simplebutton enabled="true" name="btnTestLLM" width="640" height="28" depth="3"
+                                  font_size="15" caption="Test AI Connection"/>
+
+                    <simplebutton enabled="true" name="btnClearConversations" width="640" height="28"
+                                  depth="3" font_size="15" caption="Clear All Conversations"/>
+
+                    <!-- Save / Cancel -->
+                    <simplebutton enabled="true" name="btnSave" width="640" height="32" depth="3"
+                                  font_size="17" caption="Save Settings"/>
+
+                    <simplebutton enabled="true" name="btnCancel" width="640" height="32" depth="3"
+                                  font_size="17" caption="Cancel"/>
+
+                </grid>
+            </panel>
+        </window>
+    </append>
+
+    <!-- NPC Subtitle Window -->
+    <append xpath="/windows">
+        <window name="windowNPCSubtitles" depth="100" width="800" height="90"
+                pos="-400,250" anchor="CenterBottom" cursor_area="false"
+                controller="XUiC_NPCSubtitles, 1-XNPCVoiceControl">
+            <panel depth="1" name="bg" pos="0,0" width="800" height="90"
+                   backgroundcolor="0,0,0,180"/>
+            <label depth="2" name="lblName" pos="10,-10" width="780" height="28"
+                   text="NPC Name" font_size="18" color="255,200,100,255"
+                   justify="left" style="label_outline" max_line_count="1"/>
+            <label depth="2" name="lblText" pos="10,-35" width="780" height="50"
+                   text="Dialogue text goes here..." font_size="16" color="255,255,255,255"
+                   justify="left" style="label_outline" max_line_count="2"/>
+        </window>
+    </append>
+</configs>

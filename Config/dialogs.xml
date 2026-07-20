@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<configs>
+    <!-- Relabel Wander -> matches the Scout voice rename; avoids menu/voice terminology mismatch -->
+    <set xpath="/dialogs/dialog[@id='GenericNPC']/statement[@id='Command Menu']/response_entry[@id='Wander']/@ref_text">Scout around here</set>
+    <set xpath="/dialogs/dialog[@id='GenericNPC']/response[@id='Wander']/@text">VCPatrol_Scout</set>
+    <set xpath="/dialogs/dialog[@id='GenericNPC']/response[@id='Wander']/@ref_text">Scout around here</set>
+
+    <!-- Remove legacy coded-route patrol system (SetCode window + raw buffOrderPatrol) - superseded -->
+    <remove xpath="/dialogs/dialog[@id='GenericNPC']/statement[@id='Admin Menu']/response_entry[@id='SetCode']"/>
+    <remove xpath="/dialogs/dialog[@id='GenericNPC']/statement[@id='Admin Menu']/response_entry[@id='Patrol']"/>
+    <remove xpath="/dialogs/dialog[@id='GenericNPC']/response[@id='SetCode']"/>
+    <remove xpath="/dialogs/dialog[@id='GenericNPC']/response[@id='Patrol']"/>
+
+    <!-- Add our own patrol commands to the Command Menu -->
+    <append xpath="/dialogs/dialog[@id='GenericNPC']/statement[@id='Command Menu']">
+        <response_entry id="SetPatrolPoint" ref_text="Show me a route" />
+        <response_entry id="Patrol" ref_text="Patrol your route" />
+        <response_entry id="CancelPatrolRecord" ref_text="Cancel patrol" />
+    </append>
+    <append xpath="/dialogs/dialog[@id='GenericNPC']">
+        <response id="SetPatrolPoint" text="VCPatrol_SetPatrolPoint" ref_text="Show me a route">
+            <requirement type="Leader, SCore" requirementtype="Hide" />
+            <action type="SetPatrolPoint, 1-XNPCVoiceControl" />
+        </response>
+        <response id="Patrol" text="VCPatrol_Patrol" ref_text="Patrol your route">
+            <requirement type="Leader, SCore" requirementtype="Hide" />
+            <action type="Patrol, 1-XNPCVoiceControl" />
+        </response>
+        <response id="CancelPatrolRecord" text="VCPatrol_CancelPatrolRecord" ref_text="Cancel patrol">
+            <requirement type="Leader, SCore" requirementtype="Hide" />
+            <action type="CancelPatrolRecord, 1-XNPCVoiceControl" />
+        </response>
+    </append>
+</configs>

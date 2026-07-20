@@ -1,0 +1,24 @@
+<!--
+    NPC VoiceControl - 3.0 In-Game XUi Registration
+
+    3.0 ONLY loads XUi patches from Config/XUi_InGame/, XUi_Common/, XUi_Menu/.
+    Config/XUi/ is NOT loaded. Everything lives here now.
+
+    Window groups are direct children of <xui> (no ruleset element in 3.0).
+-->
+<configs>
+    <!-- Register config UI window group -->
+    <append xpath="/xui">
+        <window_group name="XNPCVoiceControlConfigGroup" close_compass_on_open="true">
+            <window name="windowXNPCVoiceControlConfig"/>
+        </window_group>
+    </append>
+
+    <!-- Register subtitle overlay window group -->
+    <append xpath="/xui">
+        <window_group name="NPCSubtitlesGroup" close_compass_on_open="false" actionset="false">
+            <window name="windowNPCSubtitles"/>
+        </window_group>
+    </append>
+
+</configs>

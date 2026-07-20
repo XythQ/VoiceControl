@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37314.3 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NPCVoiceControl", "NPCVoiceControl.csproj", "{BAEE84A4-EF18-7BB0-0166-7E9383D4D96B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BAEE84A4-EF18-7BB0-0166-7E9383D4D96B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAEE84A4-EF18-7BB0-0166-7E9383D4D96B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAEE84A4-EF18-7BB0-0166-7E9383D4D96B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAEE84A4-EF18-7BB0-0166-7E9383D4D96B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {142C56E6-F7A2-4D99-A7ED-3CED893DAC15}
+	EndGlobalSection
+EndGlobal

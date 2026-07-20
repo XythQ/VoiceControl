@@ -1,0 +1,5 @@
+Key,File,Type,UsedInMainMenu,NoTranslate,english,Context / Alternate Text,german,spanish,french,italian,japanese,koreana,polish,brazilian,russian,turkish,schinese,tchinese
+VCPatrol_Scout,,,,,Scout around here,,,,,,,,,,,,,
+VCPatrol_SetPatrolPoint,,,,,Show me a route,,,,,,,,,,,,,
+VCPatrol_Patrol,,,,,Patrol your route,,,,,,,,,,,,,
+VCPatrol_CancelPatrolRecord,,,,,Cancel patrol,,,,,,,,,,,,,

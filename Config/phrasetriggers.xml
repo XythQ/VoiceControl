@@ -1,0 +1,1141 @@
+﻿<?xml version="1.0"?>
+<!--
+    Phrase Triggers Configuration
+
+    Each <Trigger> defines one or more phrases the player can say that trigger an instant
+    NPC action without going through the LLM. Phrases use case-insensitive substring
+    matching - so "i'm hungry" matches "hey i'm hungry buddy".
+
+    === Leader Requirements ===
+      Some actions require the player to be the NPC's leader (hired first):
+        FollowPlayer, StopFollow, GuardHere, GuardReturn, Wander, Loot,
+        Dismiss, Pickup, OpenInventory, SwapWeapon, SetCombatMode, SetEngage
+
+      Actions that work on ANY NPC (no leader needed):
+        Hire, OpenTraderInventory, GiveItem, GiveBuff, CustomDialog
+
+    === Multiple Phrases/Responses per Trigger ===
+      - <Phrase>follow me;come with me;stick with me;</Phrase>
+        Any of these phrases will fire the same action.
+      -             <Response lang="en">On it.;I'll stick close.;Let's go.</Response>
+
+        One response is picked randomly each time the trigger fires.
+      - Semicolons separate entries. Trailing semicolon is optional.
+      - Only ONE ActionType per trigger. All phrases share the same action.
+
+    === Optional <Aliases> Element ===
+      Keyword shortcuts for wider matching:
+        <Aliases>backpack;gear;what do you have;</Aliases>
+        Any of these keywords/phrases will match as a substring, even if they
+        don't appear in the <Phrase> list. Checked before normal phrase matching.
+        Use for STT variations: "open your backpack" matches "backpack" alias.
+
+    === Action Types ===
+      None               - Just show dialog, no game action
+      GiveBuff           - Apply a buff to the player (ActionParam = buff name)
+      GiveItem           - Give an item to the player (ActionParam = ItemClass name)
+      CustomDialog       - Show dialog text; empty Response = random story from the NPC's personality <Stories> pool in personalities.xml
+      OpenInventory      - Open NPC's trade/inventory window (SCore ExecuteCMD)
+      OpenTraderInventory  - Open trader's trade dialog (simulates pressing E, no leader required)
+      FollowPlayer       - NPC follows the player (buffOrderFollow)
+      StopFollow         - NPC stays where they are (buffOrderStay)
+      GuardHere          - NPC guards where the player is standing (buffOrderGuardHere)
+      GuardReturn        - NPC guards and returns to player's position (buffOrderGuard)
+      Wander             - NPC patrols around the area (buffOrderWander)
+      Loot               - NPC loots around the area (buffOrderLoot)
+      Dismiss            - Dismiss the NPC (buffOrderDismiss + ExecuteCMD "Dismiss")
+      Pickup             - Pick up the NPC (SCore PickUpNPC)
+      Hire               - Open the hire dialog window (SCore OpenDialogSDX)
+      SwapWeapon         - Swap NPC's weapon (ActionParam = weapon class id, e.g. "meleeNPCKnife")
+      SetCombatMode      - Set combat behavior mode (ActionParam = 0/1/2; DEFERRED)
+      SetEngage          - Engagement state (ActionParam = 0=assist only [default], 1=free-fight, 2=passive/never)
+
+    === Optional requireConfirmation Attribute ===
+      Add requireConfirmation="true" to a <Trigger> to make the NPC ask "Are you sure?" before executing.
+      The player must say "yes" to confirm or "no" to cancel. Use for destructive actions like Dismiss.
+
+    === How to Add a New Trigger ===
+      Copy this template and place it inside <Triggers>:
+
+        <Trigger enabled="true">
+            <Phrase>your phrase;another phrase;third phrase;</Phrase>
+            <Aliases>keyword1;keyword2;</Aliases>
+                        <Response lang="en">Response A.;Response B.;Response C.</Response>
+
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>foodCornMeal</ActionParam>
+            <ActionParamCount>1</ActionParamCount>
+        </Trigger>
+
+      - Set enabled="false" to disable a trigger without deleting it.
+      - Item names must match 7DTD ItemClass names (check game logs or wiki).
+      - Buff names must match 7DTD BuffManager names.
+      - Weapon class ids are the NPC weapon variants (e.g. meleeNPCClubWood, gunNPCSMG5).
+
+    === Combat Modes ===
+      Mode 0 = Hunting (default): NPCs attack freely at will
+      Mode 1 = Threat Control: NPCs only attack when player is actively being attacked or attacking
+      Mode 2 = Full Control: NPCs never attack unless player explicitly engages a target
+
+    This replaces the E-key NPC dialog menus (NPCCore dialogs.xml) with voice.
+-->
+<PhraseTriggers>
+    <!-- Enable or disable all phrase triggers globally -->
+    <Enabled>true</Enabled>
+
+    <Triggers>
+        <!-- === MOVEMENT / ORDERS === -->
+        <Trigger enabled="true">
+            <Phrase>follow me;come with me;stick with me;ついてきて;一緒に来て;ついて;ついで;ha tsu i te;hatsuite;tsuite kite;issho ni kite;</Phrase>
+            <Aliases>follow;come with;ついて;一緒に;hatsuite;tsuite;ha tsu i te;</Aliases>
+                        <Response lang="en">On it. I'll stick close.;Alright, let's move together.;Right behind you.</Response>
+                        <Response lang="zh">走了。我跟紧你。;好的，我们一起走。;就在你后面。</Response>
+                        <Response lang="tr">Gidiyorum. Yanında kalacağım.;Tamam, birlikte gidelim.;Hemen arkandayım.</Response>
+                        <Response lang="ru">Иду. Держусь рядом.;Хорошо, идём вместе.;Прямо за тобой.</Response>
+                        <Response lang="pt">Vou. Fico perto de você.;Certo, vamos juntos.;Logo atrás de você.</Response>
+                        <Response lang="pl">Idę. Trzymam się blisko.;Dobra, idziemy razem.;Tuż za tobą.</Response>
+                        <Response lang="ko">가자. 가까이 있을게.;알았어, 같이 가자.;바로 뒤에 있어.</Response>
+                        <Response lang="ja">行くぞ。そばにいる。;わかった、一緒に行こう。;すぐ後ろにいる。</Response>
+                        <Response lang="it">Ci sono. Resto vicino a te.;D'accordo, andiamo insieme.;Proprio dietro di te.</Response>
+                        <Response lang="fr">C'est parti. Je reste près de toi.;D'accord, avançons ensemble.;Juste derrière toi.</Response>
+                        <Response lang="es">Voy. Me quedo cerca.;Vale, vamos juntos.;Justo detrás de ti.</Response>
+                        <Response lang="de">Mach ich. Ich bleib dicht bei dir.;Alles klar, gehen wir zusammen.;Direkt hinter dir.</Response>
+            <Response lang="de">Schon erledigt.</Response>
+            <ActionType>FollowPlayer</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>stay here;wait here;hold position;ここで待って;待ってて;その場で待って;ma tte;matte;matte te;koko de matte;</Phrase>
+            <Aliases>stay;stop;wait;待って;matte;</Aliases>
+                        <Response lang="en">Understood. I'll hold position.;I'll wait right here.;Got it, staying put.</Response>
+                        <Response lang="zh">明白。我守在这里。;我在这等着。;好，我不动了。</Response>
+                        <Response lang="tr">Anlaşıldı. Pozisyonu tutuyorum.;Burada bekliyorum.;Tamam, kımıldamıyorum.</Response>
+                        <Response lang="ru">Понял. Держу позицию.;Жду здесь.;Ладно, не двигаюсь.</Response>
+                        <Response lang="pt">Entendido. Mantenho a posição.;Espero aqui.;Ok, não me movo.</Response>
+                        <Response lang="pl">Rozumiem. Trzymam pozycję.;Czekam tutaj.;Dobra, nie ruszam się.</Response>
+                        <Response lang="ko">알겠어. 자리 지킬게.;여기서 기다릴게.;알겠어, 안 움직여.</Response>
+                        <Response lang="ja">了解。この場を守る。;ここで待ってる。;わかった、動かない。</Response>
+                        <Response lang="it">Capito. Tengo la posizione.;Aspetto qui.;Va bene, non mi muovo.</Response>
+                        <Response lang="fr">Compris. Je tiens la position.;J'attends ici.;Ça marche, je bouge pas.</Response>
+                        <Response lang="es">Entendido. Mantengo la posición.;Espero aquí mismo.;Vale, no me muevo.</Response>
+                        <Response lang="de">Verstanden. Ich halte die Stellung.;Ich warte genau hier.;Klar, ich bleibe.</Response>
+            <ActionType>StopFollow</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>guard this area;watch my back;guard here;この場所を守って;見張って;警戒して;mamotte;miharatte;keikai shite;</Phrase>
+            <Aliases>guard;protect;守って;mamotte;</Aliases>
+                        <Response lang="en">I've got this spot covered. Stay safe.;Consider it done. I'll keep an eye out.;I'll watch this area.</Response>
+                        <Response lang="zh">我来守这个地方。小心点。;明白，我会留意的。;我来监视这片区域。</Response>
+                        <Response lang="tr">Bu yeri koruyorum. Dikkatli ol.;Tamam. Göz kulak oluyorum.;Bu alanı gözetliyorum.</Response>
+                        <Response lang="ru">Прикрываю это место. Будь осторожен.;Сделано. Слежу.;Охраняю эту зону.</Response>
+                        <Response lang="pt">Cubro esse lugar. Cuidado.;Feito. Estou de olho.;Vou vigiar essa área.</Response>
+                        <Response lang="pl">Pilnuję tego miejsca. Uważaj na siebie.;Zrobione. Trzymam oko.;Dozoruje ten teren.</Response>
+                        <Response lang="ko">이곳 지킬게. 조심해.;알겠어. 잘 지켜볼게.;이 구역 감시할게.</Response>
+                        <Response lang="ja">この場所を守る。気をつけろ。;了解。見張っておく。;このエリアを監視する。</Response>
+                        <Response lang="it">Copro questa zona. Stai attento.;Fatto. Tengo d'occhio.;Sorveglio quest'area.</Response>
+                        <Response lang="fr">Je couvre cet endroit. Sois prudent.;C'est comme si c'était fait. J'ouvre l'œil.;Je surveille cette zone.</Response>
+                        <Response lang="es">Tengo este sitio cubierto. Ten cuidado.;Hecho. Estaré atento.;Vigilaré esta zona.</Response>
+                        <Response lang="de">Ich sichere diese Stelle. Pass auf dich auf.;Erledigt. Ich halte Ausschau.;Ich bewache diesen Bereich.</Response>
+            <ActionType>GuardHere</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>guard and come back;patrol and return;守って戻って;警戒して戻って;</Phrase>
+            <Aliases>guard and come;patrol and return;戻って;</Aliases>
+                        <Response lang="en">I'll patrol and come back to you.;I'll guard and return to you.;On it.</Response>
+                        <Response lang="zh">我去巡逻，然后回来找你。;我守着，然后去找你。;好的。</Response>
+                        <Response lang="tr">Devriye gezip geri geleceğim.;Nöbet tutup sana katılacağım.;Tamam.</Response>
+                        <Response lang="ru">Патрулирую и вернусь к тебе.;Охраняю и догоню тебя.;Сделано.</Response>
+                        <Response lang="pt">Faço ronda e volto pra você.;Guardo e te alcanço.;Certo.</Response>
+                        <Response lang="pl">Patroluje i wracam do ciebie.;Strzegę i do ciebie dołączę.;Zrobione.</Response>
+                        <Response lang="ko">순찰하고 돌아올게.;지키다가 합류할게.;알겠어.</Response>
+                        <Response lang="ja">パトロールして戻ってくる。;見張って合流する。;了解。</Response>
+                        <Response lang="it">Pattuglio e torno da te.;Faccio la guardia e ti raggiungo.;Ci sono.</Response>
+                        <Response lang="fr">Je patrouille et je reviens vers toi.;Je monte la garde et je te rejoins.;C'est parti.</Response>
+                        <Response lang="es">Patrullo y vuelvo contigo.;Vigilo y regreso contigo.;Voy.</Response>
+                        <Response lang="de">Ich patrouilliere und komme zu dir zurück.;Ich bewache und kehre dann zu dir zurück.;Mach ich.</Response>
+            <ActionType>GuardReturn</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>scout around here;wander around;look around;この辺りを回って;徘徊して;ma wat te;mawatte;haikai shite;</Phrase>
+            <Aliases>scout;wander;回って;mawatte;ma wat te;</Aliases>
+                        <Response lang="en">I'll scout the area.;On it, looking around.;Recon mode.</Response>
+                        <Response lang="zh">我去侦察一下。;好的，四处看看。;侦察模式。</Response>
+                        <Response lang="tr">Bölgeyi keşfedeceğim.;Tamam, etrafa bakıyorum.;Keşif modu.</Response>
+                        <Response lang="ru">Разведываю район.;Хорошо, осматриваюсь.;Режим разведки.</Response>
+                        <Response lang="pt">Vou explorar a área.;Certo, olhando ao redor.;Modo reconhecimento.</Response>
+                        <Response lang="pl">Rozpoznaję teren.;Dobra, rozejrzę się.;Tryb rozpoznania.</Response>
+                        <Response lang="ko">주변 탐색할게.;알겠어, 둘러볼게.;정찰 모드.</Response>
+                        <Response lang="ja">周辺を探検する。;わかった、見て回る。;偵察モード。</Response>
+                        <Response lang="it">Esploro la zona.;D'accordo, guardo in giro.;Modalità ricognizione.</Response>
+                        <Response lang="fr">J'explore les environs.;D'accord, je regarde autour.;Mode reconnaissance.</Response>
+                        <Response lang="es">Exploraré la zona.;Vale, miro a mi alrededor.;Modo reconocimiento.</Response>
+                        <Response lang="de">Ich erkunde die Gegend.;Alles klar, ich schau mich um.;Aufgeklärt.</Response>
+            <ActionType>Wander</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>loot around here;scavenge here;この辺りを略奪して;探検して;ra se tsu shi te;rasetsu shite;tanken shite;</Phrase>
+            <Aliases>loot;scavenge;略奪;rasetsu;ra se tsu;探検;tanken;</Aliases>
+                        <Response lang="en">I'll scavenge what I can find.;I'll look for supplies.;On it.</Response>
+                        <Response lang="zh">找到什么就收什么。;去找物资。;好的。</Response>
+                        <Response lang="tr">Bulduğum her şeyi toplayacağım.;İkmal arayacağım.;Tamam.</Response>
+                        <Response lang="ru">Соберу всё, что найду.;Поищу припасы.;Сделано.</Response>
+                        <Response lang="pt">Pego o que encontrar.;Procuro suprimentos.;Certo.</Response>
+                        <Response lang="pl">Zbiorę co znajdę.;Poszukam zaopatrzenia.;Zrobione.</Response>
+                        <Response lang="ko">찾을 수 있는 거 다 모을게.;보급품 찾을게.;알겠어.</Response>
+                        <Response lang="ja">見つけたものを集める。;物資を探す。;了解。</Response>
+                        <Response lang="it">Raccolgo quello che trovo.;Cerco rifornimenti.;Ci sono.</Response>
+                        <Response lang="fr">Je récupère ce que je trouve.;Je cherche des provisions.;C'est parti.</Response>
+                        <Response lang="es">Recogeré lo que encuentre.;Buscaré suministros.;Voy.</Response>
+                        <Response lang="de">Ich sammle, was ich finden kann.;Ich suche nach Vorräten.;Mach ich.</Response>
+            <ActionType>Loot</ActionType>
+        </Trigger>
+
+        <!-- === VERTICAL MOVEMENT (JumpUp/JumpDown) === -->
+        <Trigger enabled="true">
+            <Phrase>jump up the ladder;climb the ladder;ladder up;go up the ladder;</Phrase>
+            <Aliases>ladder;climb up;jump up;</Aliases>
+                        <Response lang="en">Climbing.;On it, finding a ladder.</Response>
+            <ActionType>JumpUp</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>jump down;jump off the ledge;drop down;get down from here;</Phrase>
+            <Aliases>jump off;drop;jump down;</Aliases>
+                        <Response lang="en">Jumping.;On it, finding an edge.</Response>
+            <ActionType>JumpDown</ActionType>
+        </Trigger>
+
+        <!-- === PATROL (defined route loop) === -->
+        <Trigger enabled="true">
+            <Phrase>set patrol;here's your path;show me the way;</Phrase>
+            <Aliases>set patrol;</Aliases>
+                        <Response lang="en">I'll follow you and remember the route.;Lead the way, I'm recording.;On it, walking the path.</Response>
+            <ActionType>SetPatrolPoint</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>begin patrol;start patrol;do the route;</Phrase>
+            <Aliases>begin patrol;start patrol;</Aliases>
+                        <Response lang="en">I'll patrol this route.;On it, starting the patrol.;Route locked in.</Response>
+            <ActionType>Patrol</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>cancel patrol;cancel route;cancel recording;never mind;stop recording;abort the route;</Phrase>
+            <Aliases>cancel patrol;cancel route;</Aliases>
+                        <Response lang="en">Cancelled, clearing the path.;Never mind, I'll stay here.;Path recording aborted.</Response>
+            <ActionType>CancelPatrolRecord</ActionType>
+        </Trigger>
+
+        <!-- === FOLLOW DISTANCE ADJUSTMENT === -->
+        <Trigger enabled="true">
+            <Phrase>come closer;get closer;move closer;move in tighter;come in tighter;tighten up;pull in;</Phrase>
+            <Aliases>closer;</Aliases>
+            <Response lang="en">I'll stay close.;Right behind you.;Got it.</Response>
+            <ActionType>SetFollowDistance</ActionType>
+            <ActionParam>1</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>back off;give me space;back up;spread out;fan out;give me room;</Phrase>
+            <Aliases>back off;space;</Aliases>
+            <Response lang="en">I'll give you room.;Backing up.;Got it.</Response>
+            <ActionType>SetFollowDistance</ActionType>
+            <ActionParam>5</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>normal distance;default distance;</Phrase>
+            <Aliases>normal distance;</Aliases>
+            <Response lang="en">Back to normal.;Got it.</Response>
+            <ActionType>SetFollowDistance</ActionType>
+            <ActionParam>2.5</ActionParam>
+        </Trigger>
+
+        <!-- === FORMATION POSITIONING === -->
+        <!-- Cardinal position commands = grammar: <verb> <cardinal>, verbs cover|hold|watch, cardinals n/s/e/w -->
+        <!-- Multi-word only (2-token minimum) = avoids bare "hold" colliding with Stay order. -->
+        <!-- abs: prefix bypasses yaw resolution; handler appends default wide tier. -->
+        <Trigger enabled="true">
+            <Phrase>cover north;hold north;watch north;</Phrase>
+            <Response lang="en">Covering north.;Holding the north side.</Response>
+            <ActionType>SetFormation</ActionType>
+            <ActionParam>abs:0</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>cover east;hold east;watch east;</Phrase>
+            <Response lang="en">Covering east.;Holding the east side.</Response>
+            <ActionType>SetFormation</ActionType>
+            <ActionParam>abs:90</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>cover south;hold south;watch south;</Phrase>
+            <Response lang="en">Covering south.;Holding the south side.</Response>
+            <ActionType>SetFormation</ActionType>
+            <ActionParam>abs:180</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>cover west;hold west;watch west;</Phrase>
+            <Response lang="en">Covering west.;Holding the west side.</Response>
+            <ActionType>SetFormation</ActionType>
+            <ActionParam>abs:270</ActionParam>
+        </Trigger>
+
+        <!-- Cancel formation → plain follow at vcFollowMin -->
+        <Trigger enabled="true">
+            <Phrase>on me;stay close;cancel formation;break formation;</Phrase>
+            <Aliases>fall in;come back;</Aliases>
+            <Response lang="en">On you.;Falling in.;Right behind you.</Response>
+            <ActionType>SetFormation</ActionType>
+            <ActionParam>0,0</ActionParam>
+        </Trigger>
+
+        <!-- === COMMANDED CROUCH (kneel) === -->
+        <!-- Sets CrouchOverride cvar - inert until SCore ships the hook in follow/idle tasks. -->
+        <!-- ActionParam: 1=crouch, 2=stand, 0=resume leader mirroring -->
+        <Trigger enabled="true">
+            <Phrase>kneel;get down;take cover;</Phrase>
+            <Aliases>take a knee;</Aliases>
+            <Response lang="en">Down.;Taking cover.;Got it.</Response>
+            <ActionType>SetCrouch</ActionType>
+            <ActionParam>1</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>stand up;on your feet;</Phrase>
+            <Aliases>on your feet;</Aliases>
+            <Response lang="en">Up.;Rising.;Yes.</Response>
+            <ActionType>SetCrouch</ActionType>
+            <ActionParam>2</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>follow my lead;as you were;</Phrase>
+            <Aliases>match me;normal stance;</Aliases>
+            <Response lang="en">Copy.;On it.;As you say.</Response>
+            <ActionType>SetCrouch</ActionType>
+            <ActionParam>0</ActionParam>
+        </Trigger>
+
+        <!-- === TACTICAL MODE TOGGLE (command-only vs chat+commands) === -->
+        <!-- Player-wide: sets varTacticalMode on player. In tactical mode, command misses get a brief clarification instead of LLM chat. -->
+        <Trigger enabled="true">
+            <Phrase>go tactical;lock in;tactical mode;command mode;</Phrase>
+            <Response lang="en">Tactical mode on.;Locked in.;Command only.</Response>
+            <ActionType>SetTacticalMode</ActionType>
+            <ActionParam>1</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>at ease;stand down;normal mode;</Phrase>
+            <Response lang="en">At ease.;Normal mode.;Relaxing.</Response>
+            <ActionType>SetTacticalMode</ActionType>
+            <ActionParam>0</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true" requireConfirmation="true">
+            <Phrase>you're fired;dismiss;dismissed;解雇する;去って;辞めさせて;sake;saekusu;shimesasete;</Phrase>
+            <Aliases>fired;go away;leave;解雇;sake;去って;</Aliases>
+                        <Response lang="en">Good luck out there. Stay safe.;Understood. I'll go my own way.;Take care of yourself.</Response>
+                        <Response lang="zh">外面保重。;明白。我自己走。;照顾好自己。</Response>
+                        <Response lang="tr">Orada bol şans. Kendine dikkat et.;Anlaşıldı. Kendi yoluma gideceğim.;Kendine iyi bak.</Response>
+                        <Response lang="ru">Удачи там. Береги себя.;Понял. Пойду своим путём.;Береги себя.</Response>
+                        <Response lang="pt">Boa sorte aí fora. Cuida-se.;Entendido. Vou seguir meu caminho.;Cuida-se.</Response>
+                        <Response lang="pl">Powodzenia tam. Uważaj na siebie.;Rozumiem. Pójdę swoją drogą.;Dbaj o siebie.</Response>
+                        <Response lang="ko">밖에서 조심해. 잘 지내.;알겠어. 내 길 가겠어.;몸 조심해.</Response>
+                        <Response lang="ja">向こうで気をつけろよ。;了解。自分で行く。;気をつけてな。</Response>
+                        <Response lang="it">Buona fortuna là fuori. Stai attento.;Capito. Farò la mia strada.;Prenditi cura di te.</Response>
+                        <Response lang="fr">Bonne chance là-dehors. Sois prudent.;Compris. Je suivrai mon chemin.;Prends soin de toi.</Response>
+                        <Response lang="es">Suerte ahí fuera. Cuídate.;Entendido. Seguiré mi camino.;Cuídate mucho.</Response>
+                        <Response lang="de">Viel Glück da draußen. Pass auf dich auf.;Verstanden. Ich geh meinen eigenen Weg.;Pass gut auf dich auf.</Response>
+            <ActionType>Dismiss</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>pick me up;pickup;get on;拾って;乗せて;背負って;</Phrase>
+            <Aliases>pickup;拾って;背負って;</Aliases>
+                        <Response lang="en">Alright, I'm on.;Got on. Let's move.</Response>
+                        <Response lang="zh">上去了。;上了，走吧。</Response>
+                        <Response lang="tr">Bindim.;Bindim, hadi gidelim.</Response>
+                        <Response lang="ru">Залез.;На борту. Поехали.</Response>
+                        <Response lang="pt">Ok, estou em cima.;Montado. Vamos.</Response>
+                        <Response lang="pl">Wlazłem.;Jestem na górze. Jedźmy.</Response>
+                        <Response lang="ko">올라탔어.;탔어. 가자.</Response>
+                        <Response lang="ja">乗ったぞ。;乗った。行こう。</Response>
+                        <Response lang="it">Eccomi, sono su.;Sono su. Andiamo.</Response>
+                        <Response lang="fr">Voilà, je suis monté.;Monté. On y va.</Response>
+                        <Response lang="es">Vale, ya estoy.;Estoy arriba. Vamos.</Response>
+                        <Response lang="de">Alles klar, ich bin drauf.;Bin drauf. Los geht's.</Response>
+            <ActionType>Pickup</ActionType>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>hire me;I want to hire you;I'm interested in hiring you;hire you;雇いたい;働いて;雇ってください;hata raku;hattaraku;hayaitai;hat te;hiraete kudasai;</Phrase>
+            <Aliases>hire;work with me;join me;雇う;働く;hataraku;hata raku;hayau;hatte;</Aliases>
+                        <Response lang="en">Let's talk about it.;Sure, let's see what we can work with.;Alright, let's discuss terms.</Response>
+                        <Response lang="zh">说说吧。;当然，看看能怎么合作。;好，我们谈谈条件。</Response>
+                        <Response lang="tr">Konuşalım.;Tabii, ne yapabileceğimize bakalım.;Peki, şartları konuşalım.</Response>
+                        <Response lang="ru">Поговорим.;Конечно, посмотрим что можно сделать.;Хорошо, обсудим условия.</Response>
+                        <Response lang="pt">Vamos conversar.;Claro, vamos ver o que dá pra fazer.;Certo, vamos acertar as condições.</Response>
+                        <Response lang="pl">Porozmawiajmy.;Jasne, zobaczymy co można zrobić.;Dobrze, omówmy warunki.</Response>
+                        <Response lang="ko">얘기해 보자.;물론, 뭘 할 수 있나 봐보자.;좋아, 조건 얘기해 보자.</Response>
+                        <Response lang="ja">話し合おう。;いいぞ、何ができるか見てみよう。;条件を話し合おう。</Response>
+                        <Response lang="it">Parliamone.;Certo, vediamo cosa si può fare.;Bene, discutiamo le condizioni.</Response>
+                        <Response lang="fr">Parlons-en.;Bien sûr, voyons ce qu'on peut faire.;D'accord, parlons des conditions.</Response>
+                        <Response lang="es">Hablémoslo.;Claro, veamos qué se puede hacer.;Bien, hablemos de las condiciones.</Response>
+                        <Response lang="de">Lass uns darüber reden.;Klar, mal sehen, was sich machen lässt.;Gut, besprechen wir die Bedingungen.</Response>
+            <ActionType>Hire</ActionType>
+        </Trigger>
+
+        <!-- === WEAPON SWAPS (replicate E-key Weapon Menu) === -->
+        <!-- ActionParam = NPC weapon class id, ActionParam2 = NPC tag from entityclasses.xml -->
+
+        <!-- Melee Weapons -->
+
+        <Trigger enabled="true">
+            <Phrase>use empty hands;use bare hands;use your hands;empty hand;empty hands;bare hand;bare hands;drop your weapon;put your weapon away;素手で;手ぶらで;武器をしまえ;</Phrase>
+                        <Response lang="en">Weapon dropped.;I've put it away.</Response>
+                        <Response lang="zh">武器收好了。;收起来了。</Response>
+                        <Response lang="tr">Silah kaldırıldı.;Kaldırdım.</Response>
+                        <Response lang="ru">Оружие убрано.;Убрал.</Response>
+                        <Response lang="pt">Arma guardada.;Já guardei.</Response>
+                        <Response lang="pl">Broń schowana.;Schowałem.</Response>
+                        <Response lang="ko">무기 집었어.;집어넣었어.</Response>
+                        <Response lang="ja">武器をしまった。;しまったぞ。</Response>
+                        <Response lang="it">Arma riposta.;L'ho riposta.</Response>
+                        <Response lang="fr">Arme rangée.;Je l'ai rangée.</Response>
+                        <Response lang="es">Arma guardada.;Ya la he guardado.</Response>
+                        <Response lang="de">Waffe weggesteckt.;Ich hab sie weggepackt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCEmptyHand</ActionParam>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your knife;use knife;draw your knife;ナイフを使え;包丁を出せ;</Phrase>
+                        <Response lang="en">Knife ready.;Got my knife out.</Response>
+                        <Response lang="zh">刀准备好了。;刀在手了。</Response>
+                        <Response lang="tr">Bıçak hazır.;Bıçak elimde.</Response>
+                        <Response lang="ru">Нож готов.;Нож в руке.</Response>
+                        <Response lang="pt">Faca pronta.;Faca na mão.</Response>
+                        <Response lang="pl">Nóż gotowy.;Nóż w ręku.</Response>
+                        <Response lang="ko">칼 준비됐어.;칼 들었어.</Response>
+                        <Response lang="ja">ナイフ準備完了。;ナイフを構えた。</Response>
+                        <Response lang="it">Coltello pronto.;Coltello in mano.</Response>
+                        <Response lang="fr">Couteau prêt.;Couteau en main.</Response>
+                        <Response lang="es">Cuchillo listo.;Cuchillo en mano.</Response>
+                        <Response lang="de">Messer bereit.;Messer gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCKnife</ActionParam>
+            <ActionParam2>Knife</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your machete;use machete;draw your machete;マチェテを使え;刈刀を出せ;</Phrase>
+                        <Response lang="en">Machete ready.;Got my machete out.</Response>
+                        <Response lang="zh">砍刀准备好了。;砍刀在手了。</Response>
+                        <Response lang="tr">Pala hazır.;Pala elimde.</Response>
+                        <Response lang="ru">Мачете готово.;Мачете в руке.</Response>
+                        <Response lang="pt">Facão pronto.;Facão na mão.</Response>
+                        <Response lang="pl">Maczeta gotowa.;Maczeta w ręku.</Response>
+                        <Response lang="ko">마체테 준비됐어.;마체테 들었어.</Response>
+                        <Response lang="ja">マチェット準備完了。;マチェットを構えた。</Response>
+                        <Response lang="it">Machete pronto.;Machete in mano.</Response>
+                        <Response lang="fr">Machette prête.;Machette en main.</Response>
+                        <Response lang="es">Machete listo.;Machete en mano.</Response>
+                        <Response lang="de">Machete bereit.;Machete gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCMachete</ActionParam>
+            <ActionParam2>Machete</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your club;use club;grab your club;棍棒を使え;クラブを出せ;</Phrase>
+                        <Response lang="en">Club ready.;Got my club.</Response>
+                        <Response lang="zh">棍棒准备好了。;棍棒在手了。</Response>
+                        <Response lang="tr">Sopa hazır.;Sopa elimde.</Response>
+                        <Response lang="ru">Дубина готова.;Дубина в руке.</Response>
+                        <Response lang="pt">Porrete pronto.;Porrete na mão.</Response>
+                        <Response lang="pl">Pałka gotowa.;Pałka w ręku.</Response>
+                        <Response lang="ko">곤봉 준비됐어.;곤봉 들었어.</Response>
+                        <Response lang="ja">こん棒準備完了。;こん棒を持った。</Response>
+                        <Response lang="it">Randello pronto.;Randello in mano.</Response>
+                        <Response lang="fr">Gourdin prêt.;Gourdin en main.</Response>
+                        <Response lang="es">Garrote listo.;Garrote en mano.</Response>
+                        <Response lang="de">Keule bereit.;Hab meine Keule.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCClubWood</ActionParam>
+            <ActionParam2>ClubWood</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your bat;use bat;grab your bat;バットを使え;球棒を出せ;</Phrase>
+                        <Response lang="en">Bat ready.;Got my bat.</Response>
+                        <Response lang="zh">球棒准备好了。;球棒在手了。</Response>
+                        <Response lang="tr">Beyzbol sopası hazır.;Beyzbol sopası elimde.</Response>
+                        <Response lang="ru">Бита готова.;Бита в руке.</Response>
+                        <Response lang="pt">Taco pronto.;Taco na mão.</Response>
+                        <Response lang="pl">Kij gotowy.;Kij w ręku.</Response>
+                        <Response lang="ko">배트 준비됐어.;배트 들었어.</Response>
+                        <Response lang="ja">バット準備完了。;バットを持った。</Response>
+                        <Response lang="it">Mazza pronta.;Mazza in mano.</Response>
+                        <Response lang="fr">Batte prête.;Batte en main.</Response>
+                        <Response lang="es">Bate listo.;Bate en mano.</Response>
+                        <Response lang="de">Schläger bereit.;Hab meinen Schläger.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCBatWood</ActionParam>
+            <ActionParam2>BatWood</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your axe;use axe;draw your axe;斧を使え;斧を出せ;</Phrase>
+                        <Response lang="en">Axe ready.;Got my axe out.</Response>
+                        <Response lang="zh">斧头准备好了。;斧头在手了。</Response>
+                        <Response lang="tr">Balta hazır.;Balta elimde.</Response>
+                        <Response lang="ru">Топор готов.;Топор в руке.</Response>
+                        <Response lang="pt">Machado pronto.;Machado na mão.</Response>
+                        <Response lang="pl">Siekiera gotowa.;Siekiera w ręku.</Response>
+                        <Response lang="ko">도끼 준비됐어.;도끼 들었어.</Response>
+                        <Response lang="ja">斧準備完了。;斧を持った。</Response>
+                        <Response lang="it">Ascia pronta.;Ascia in mano.</Response>
+                        <Response lang="fr">Hache prête.;Hache en main.</Response>
+                        <Response lang="es">Hacha lista.;Hacha en mano.</Response>
+                        <Response lang="de">Axt bereit.;Axt gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCAxe</ActionParam>
+            <ActionParam2>Axe</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your spear;use spear;grab your spear;槍を使え;槍を出せ;</Phrase>
+                        <Response lang="en">Spear ready.;Got my spear.</Response>
+                        <Response lang="zh">长矛准备好了。;长矛在手了。</Response>
+                        <Response lang="tr">Mızrak hazır.;Mızrak elimde.</Response>
+                        <Response lang="ru">Копьё готово.;Копьё в руке.</Response>
+                        <Response lang="pt">Lança pronta.;Lança na mão.</Response>
+                        <Response lang="pl">Włócznia gotowa.;Włócznia w ręku.</Response>
+                        <Response lang="ko">창 준비됐어.;창 들었어.</Response>
+                        <Response lang="ja">槍準備完了。;槍を構えた。</Response>
+                        <Response lang="it">Lancia pronta.;Lancia in mano.</Response>
+                        <Response lang="fr">Lance prête.;Lance en main.</Response>
+                        <Response lang="es">Lanza lista.;Lanza en mano.</Response>
+                        <Response lang="de">Speer bereit.;Hab meinen Speer.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>meleeNPCSpear</ActionParam>
+            <ActionParam2>Spear</ActionParam2>
+        </Trigger>
+
+        <!-- Ranged Weapons -->
+
+        <Trigger enabled="true">
+            <Phrase>use your smg;use smg;grab your smg;サブマシンガンを使え;短機関銃を出せ;</Phrase>
+                        <Response lang="en">SMG ready.;Got my SMG.</Response>
+                        <Response lang="zh">冲锋枪准备好了。;冲锋枪在手了。</Response>
+                        <Response lang="tr">SMG hazır.;SMG elimde.</Response>
+                        <Response lang="ru">ПП готов.;ПП в руке.</Response>
+                        <Response lang="pt">SMG pronta.;SMG na mão.</Response>
+                        <Response lang="pl">SMG gotowy.;SMG w ręku.</Response>
+                        <Response lang="ko">SMG 준비됐어.;SMG 들었어.</Response>
+                        <Response lang="ja">SMG準備完了。;SMGを構えた。</Response>
+                        <Response lang="it">SMG pronta.;SMG in mano.</Response>
+                        <Response lang="fr">SMG prêt.;SMG en main.</Response>
+                        <Response lang="es">SMG lista.;SMG en mano.</Response>
+                        <Response lang="de">SMG bereit.;Hab meine SMG.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCSMG5</ActionParam>
+            <ActionParam2>SMG</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your pipe pistol;use pipe pistol;draw your pipe pistol;パイプピストルを使え;管銃を出せ;</Phrase>
+                        <Response lang="en">Pipe pistol ready.;Got my pipe pistol out.</Response>
+                        <Response lang="zh">管道手枪准备好了。;管道手枪在手了。</Response>
+                        <Response lang="tr">Boru tabancası hazır.;Boru tabancası elimde.</Response>
+                        <Response lang="ru">Трубчатый пистолет готов.;Трубчатый пистолет в руке.</Response>
+                        <Response lang="pt">Pistola improvisada pronta.;Pistola improvisada na mão.</Response>
+                        <Response lang="pl">Pistolet rurowy gotowy.;Pistolet rurowy w ręku.</Response>
+                        <Response lang="ko">파이프 권총 준비됐어.;파이프 권총 들었어.</Response>
+                        <Response lang="ja">パイプピストル準備完了。;パイプピストルを構えた。</Response>
+                        <Response lang="it">Pistola improvvisata pronta.;Pistola improvvisata in mano.</Response>
+                        <Response lang="fr">Pistolet à tuyau prêt.;Pistolet à tuyau en main.</Response>
+                        <Response lang="es">Pistola de tubo lista.;Pistola de tubo en mano.</Response>
+                        <Response lang="de">Rohrpistole bereit.;Rohrpistole gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCPipePistol</ActionParam>
+            <ActionParam2>PipePistol</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your pipe shotgun;use pipe shotgun;draw your pipe shotgun;パイプショットガンを使え;管散弾銃を出せ;</Phrase>
+                        <Response lang="en">Pipe shotgun ready.;Got my pipe shotgun out.</Response>
+                        <Response lang="zh">管道霰弹枪准备好了。;管道霰弹枪在手了。</Response>
+                        <Response lang="tr">Boru tüfeği hazır.;Boru tüfeği elimde.</Response>
+                        <Response lang="ru">Трубчатый дробовик готов.;Трубчатый дробовик в руке.</Response>
+                        <Response lang="pt">Espingarda improvisada pronta.;Espingarda improvisada na mão.</Response>
+                        <Response lang="pl">Strzelba rurowa gotowa.;Strzelba rurowa w ręku.</Response>
+                        <Response lang="ko">파이프 샷건 준비됐어.;파이프 샷건 들었어.</Response>
+                        <Response lang="ja">パイプショットガン準備完了。;パイプショットガンを構えた。</Response>
+                        <Response lang="it">Fucile improvvisato pronto.;Fucile improvvisato in mano.</Response>
+                        <Response lang="fr">Fusil à tuyau prêt.;Fusil à tuyau en main.</Response>
+                        <Response lang="es">Escopeta de tubo lista.;Escopeta de tubo en mano.</Response>
+                        <Response lang="de">Rohrflinte bereit.;Rohrflinte gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCPipeShotgun</ActionParam>
+            <ActionParam2>PipeShotgun</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your pipe rifle;use pipe rifle;draw your pipe rifle;パイプライフルを使え;管ライフルを出せ;</Phrase>
+                        <Response lang="en">Pipe rifle ready.;Got my pipe rifle out.</Response>
+                        <Response lang="zh">管道步枪准备好了。;管道步枪在手了。</Response>
+                        <Response lang="tr">Boru karabinası hazır.;Boru karabinası elimde.</Response>
+                        <Response lang="ru">Трубчатая винтовка готова.;Трубчатая винтовка в руке.</Response>
+                        <Response lang="pt">Rifle improvisado pronto.;Rifle improvisado na mão.</Response>
+                        <Response lang="pl">Karabinek rurowy gotowy.;Karabinek rurowy w ręku.</Response>
+                        <Response lang="ko">파이프 소총 준비됐어.;파이프 소총 들었어.</Response>
+                        <Response lang="ja">パイプライフル準備完了。;パイプライフルを構えた。</Response>
+                        <Response lang="it">Carabina improvvisata pronta.;Carabina improvvisata in mano.</Response>
+                        <Response lang="fr">Carabine à tuyau prête.;Carabine à tuyau en main.</Response>
+                        <Response lang="es">Rifle de tubo listo.;Rifle de tubo en mano.</Response>
+                        <Response lang="de">Rohrgewehr bereit.;Rohrgewehr gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCPipeRifle</ActionParam>
+            <ActionParam2>PipeRifle</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your pipe machine gun;use pipe machine gun;draw your pipe machine gun;パイプ機関銃を使え;管機関銃を出せ;</Phrase>
+                        <Response lang="en">Pipe machine gun ready.;Got my pipe machine gun out.</Response>
+                        <Response lang="zh">管道机枪准备好了。;管道机枪在手了。</Response>
+                        <Response lang="tr">Boru makineli tüfeği hazır.;Boru makineli tüfeği elimde.</Response>
+                        <Response lang="ru">Трубчатый пулемёт готов.;Трубчатый пулемёт в руке.</Response>
+                        <Response lang="pt">Metralhadora improvisada pronta.;Metralhadora improvisada na mão.</Response>
+                        <Response lang="pl">Karabin maszynowy rurowy gotowy.;Karabin maszynowy rurowy w ręku.</Response>
+                        <Response lang="ko">파이프 기관총 준비됐어.;파이프 기관총 들었어.</Response>
+                        <Response lang="ja">パイプ機関銃準備完了。;パイプ機関銃を構えた。</Response>
+                        <Response lang="it">Mitragliatrice improvvisata pronta.;Mitragliatrice improvvisata in mano.</Response>
+                        <Response lang="fr">Mitrailleuse à tuyau prête.;Mitrailleuse à tuyau en main.</Response>
+                        <Response lang="es">Ametralladora de tubo lista.;Ametralladora de tubo en mano.</Response>
+                        <Response lang="de">Rohr-MG bereit.;Hab mein Rohr-MG.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCPipeMG</ActionParam>
+            <ActionParam2>PipeMG</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your m 60;use m 60;draw your m 60;M60を使え;M60を出せ;</Phrase>
+                        <Response lang="en">M-60 ready.;Got my m-60 out.</Response>
+                        <Response lang="zh">M60准备好了。;M60在手了。</Response>
+                        <Response lang="tr">M60 hazır.;M60 elimde.</Response>
+                        <Response lang="ru">M60 готов.;M60 в руке.</Response>
+                        <Response lang="pt">M60 pronto.;M60 na mão.</Response>
+                        <Response lang="pl">M60 gotowy.;M60 w ręku.</Response>
+                        <Response lang="ko">M60 준비됐어.;M60 들었어.</Response>
+                        <Response lang="ja">M60準備完了。;M60を構えた。</Response>
+                        <Response lang="it">M60 pronto.;M60 in mano.</Response>
+                        <Response lang="fr">M-60 prêt.;M-60 en main.</Response>
+                        <Response lang="es">M-60 lista.;M-60 en mano.</Response>
+                        <Response lang="de">M60 bereit.;Hab mein M60.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCM60</ActionParam>
+            <ActionParam2>M60</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your pistol;use pistol;draw your pistol;拳銃を使え;ピストルを出せ;</Phrase>
+                        <Response lang="en">Pistol ready.;Got my pistol out.</Response>
+                        <Response lang="zh">手枪准备好了。;手枪在手了。</Response>
+                        <Response lang="tr">Tabanca hazır.;Tabanca elimde.</Response>
+                        <Response lang="ru">Пистолет готов.;Пистолет в руке.</Response>
+                        <Response lang="pt">Pistola pronta.;Pistola na mão.</Response>
+                        <Response lang="pl">Pistolet gotowy.;Pistolet w ręku.</Response>
+                        <Response lang="ko">권총 준비됐어.;권총 들었어.</Response>
+                        <Response lang="ja">ピストル準備完了。;ピストルを構えた。</Response>
+                        <Response lang="it">Pistola pronta.;Pistola in mano.</Response>
+                        <Response lang="fr">Pistolet prêt.;Pistolet en main.</Response>
+                        <Response lang="es">Pistola lista.;Pistola en mano.</Response>
+                        <Response lang="de">Pistole bereit.;Pistole gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCPistol</ActionParam>
+            <ActionParam2>Pistol</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your desert eagle;draw your desert eagle;use your eagle;デザートイーグルを使え;デagleを出せ;</Phrase>
+                        <Response lang="en">Desert Eagle ready.;Got my Desert Eagle out.</Response>
+                        <Response lang="zh">沙漠之鹰准备好了。;沙漠之鹰在手了。</Response>
+                        <Response lang="tr">Desert Eagle hazır.;Desert Eagle elimde.</Response>
+                        <Response lang="ru">Дезерт Игл готов.;Дезерт Игл в руке.</Response>
+                        <Response lang="pt">Desert Eagle pronto.;Desert Eagle na mão.</Response>
+                        <Response lang="pl">Desert Eagle gotowy.;Desert Eagle w ręku.</Response>
+                        <Response lang="ko">데저트이글 준비됐어.;데저트이글 들었어.</Response>
+                        <Response lang="ja">デザートイーグル準備完了。;デザートイーグルを構えた。</Response>
+                        <Response lang="it">Desert Eagle pronto.;Desert Eagle in mano.</Response>
+                        <Response lang="fr">Desert Eagle prêt.;Desert Eagle en main.</Response>
+                        <Response lang="es">Desert Eagle lista.;Desert Eagle en mano.</Response>
+                        <Response lang="de">Desert Eagle bereit.;Desert Eagle gezückt.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCDPistol</ActionParam>
+            <ActionParam2>DPistol</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your ak47;use ak47;use your ak;AK47を使え;AKを出せ;</Phrase>
+                        <Response lang="en">AK47 ready.;Got my AK47.</Response>
+                        <Response lang="zh">AK47准备好了。;AK47在手了。</Response>
+                        <Response lang="tr">AK47 hazır.;AK47 elimde.</Response>
+                        <Response lang="ru">АК47 готов.;АК47 в руке.</Response>
+                        <Response lang="pt">AK47 pronto.;AK47 na mão.</Response>
+                        <Response lang="pl">AK47 gotowy.;AK47 w ręku.</Response>
+                        <Response lang="ko">AK47 준비됐어.;AK47 들었어.</Response>
+                        <Response lang="ja">AK47準備完了。;AK47を構えた。</Response>
+                        <Response lang="it">AK47 pronto.;AK47 in mano.</Response>
+                        <Response lang="fr">AK47 prêt.;AK47 en main.</Response>
+                        <Response lang="es">AK47 lista.;AK47 en mano.</Response>
+                        <Response lang="de">AK47 bereit.;Hab meine AK47.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCAk47</ActionParam>
+            <ActionParam2>AK47</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your tactical assault rifle;use tactical assault rifle;grab your tactical assault rifle;突撃銃を使え;戦術ライフルを出せ;</Phrase>
+                        <Response lang="en">Tactical assault rifle ready.;Got my tactical assault rifle.</Response>
+                        <Response lang="zh">战术突击步枪准备好了。;突击步枪在手了。</Response>
+                        <Response lang="tr">Taktik saldırı tüfeği hazır.;Saldırı tüfeği elimde.</Response>
+                        <Response lang="ru">Тактическая штурмовая винтовка готова.;Штурмовая винтовка в руке.</Response>
+                        <Response lang="pt">Rifle de assalto tático pronto.;Rifle de assalto na mão.</Response>
+                        <Response lang="pl">Taktyczny karabin szturmowy gotowy.;Karabin szturmowy w ręku.</Response>
+                        <Response lang="ko">전술 돌격소총 준비됐어.;돌격소총 들었어.</Response>
+                        <Response lang="ja">タクティカルアサルトライフル準備完了。;アサルトライフルを構えた。</Response>
+                        <Response lang="it">Fucile d'assalto tattico pronto.;Fucile d'assalto in mano.</Response>
+                        <Response lang="fr">Fusil d'assaut tactique prêt.;Fusil d'assaut en main.</Response>
+                        <Response lang="es">Rifle de asalto táctico listo.;Rifle de asalto en mano.</Response>
+                        <Response lang="de">Sturmgewehr bereit.;Hab mein Sturmgewehr.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCTRifle</ActionParam>
+            <ActionParam2>TRifle</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your hunting rifle;use hunting rifle;grab your hunting rifle;狩猟ライフルを使え;狩り銃を出せ;</Phrase>
+                        <Response lang="en">Hunting rifle ready.;Got my hunting rifle.</Response>
+                        <Response lang="zh">猎用步枪准备好了。;猎用步枪在手了。</Response>
+                        <Response lang="tr">Av tüfeği hazır.;Av tüfeği elimde.</Response>
+                        <Response lang="ru">Охотничья винтовка готова.;Охотничья винтовка в руке.</Response>
+                        <Response lang="pt">Carabina de caça pronta.;Carabina de caça na mão.</Response>
+                        <Response lang="pl">Karabinek myśliwski gotowy.;Karabinek myśliwski w ręku.</Response>
+                        <Response lang="ko">사냥 소총 준비됐어.;사냥 소총 들었어.</Response>
+                        <Response lang="ja">ハンティングライフル準備完了。;ハンティングライフルを構えた。</Response>
+                        <Response lang="it">Carabina da caccia pronta.;Carabina da caccia in mano.</Response>
+                        <Response lang="fr">Carabine de chasse prête.;Carabine de chasse en main.</Response>
+                        <Response lang="es">Rifle de caza listo.;Rifle de caza en mano.</Response>
+                        <Response lang="de">Jagdgewehr bereit.;Hab mein Jagdgewehr.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCHRifle</ActionParam>
+            <ActionParam2>HRifle</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your sniper rifle;use sniper rifle;use your sniper;狙撃銃を使え;スナイパーを出せ;</Phrase>
+                        <Response lang="en">Sniper rifle ready.;Got my sniper.</Response>
+                        <Response lang="zh">狙击步枪准备好了。;狙击步枪在手了。</Response>
+                        <Response lang="tr">Keskin nişancı tüfeği hazır.;Keskin nişancı tüfeği elimde.</Response>
+                        <Response lang="ru">Снайперская винтовка готова.;Снайперская винтовка в руке.</Response>
+                        <Response lang="pt">Rifle de precisão pronto.;Rifle de precisão na mão.</Response>
+                        <Response lang="pl">Karabin snajperski gotowy.;Karabin snajperski w ręku.</Response>
+                        <Response lang="ko">저격소총 준비됐어.;저격소총 들었어.</Response>
+                        <Response lang="ja">スナイパーライフル準備完了。;スナイパーライフルを構えた。</Response>
+                        <Response lang="it">Fucile di precisione pronto.;Fucile di precisione in mano.</Response>
+                        <Response lang="fr">Fusil de précision prêt.;Fusil de précision en main.</Response>
+                        <Response lang="es">Rifle de francotirador listo.;Francotirador en mano.</Response>
+                        <Response lang="de">Scharfschützengewehr bereit.;Hab mein Gewehr.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCSRifle</ActionParam>
+            <ActionParam2>SRifle</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your bow;use bow;grab your bow;弓を使え;弓を出せ;</Phrase>
+                        <Response lang="en">Bow ready.;Got my bow.</Response>
+                        <Response lang="zh">弓准备好了。;弓在手了。</Response>
+                        <Response lang="tr">Yay hazır.;Yay elimde.</Response>
+                        <Response lang="ru">Лук готов.;Лук в руке.</Response>
+                        <Response lang="pt">Arco pronto.;Arco na mão.</Response>
+                        <Response lang="pl">Łuk gotowy.;Łuk w ręku.</Response>
+                        <Response lang="ko">활 준비됐어.;활 들었어.</Response>
+                        <Response lang="ja">弓準備完了。;弓を構えた。</Response>
+                        <Response lang="it">Arco pronto.;Arco in mano.</Response>
+                        <Response lang="fr">Arc prêt.;Arc en main.</Response>
+                        <Response lang="es">Arco listo.;Arco en mano.</Response>
+                        <Response lang="de">Bogen bereit.;Hab meinen Bogen.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCLBow</ActionParam>
+            <ActionParam2>LBow</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your crossbow;use crossbow;grab your crossbow;クロスボウを使え;十字弓を出せ;</Phrase>
+                        <Response lang="en">Crossbow ready.;Got my crossbow.</Response>
+                        <Response lang="zh">弩准备好了。;弩在手了。</Response>
+                        <Response lang="tr">Arbalet hazır.;Arbalet elimde.</Response>
+                        <Response lang="ru">Арбалет готов.;Арбалет в руке.</Response>
+                        <Response lang="pt">Besta pronta.;Besta na mão.</Response>
+                        <Response lang="pl">Kusza gotowa.;Kusza w ręku.</Response>
+                        <Response lang="ko">석궁 준비됐어.;석궁 들었어.</Response>
+                        <Response lang="ja">クロスボウ準備完了。;クロスボウを構えた。</Response>
+                        <Response lang="it">Balestra pronta.;Balestra in mano.</Response>
+                        <Response lang="fr">Arbalète prête.;Arbalète en main.</Response>
+                        <Response lang="es">Ballesta lista.;Ballesta en mano.</Response>
+                        <Response lang="de">Armbrust bereit.;Hab meine Armbrust.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCXBow</ActionParam>
+            <ActionParam2>XBow</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your pump action shotgun;use pump action shotgun;draw your pump action shotgun;use your pump;ポンプアクションを使え;ポンプショットガンを出せ;</Phrase>
+                        <Response lang="en">Pump action shotgun ready.;Got my pump action shotgun.</Response>
+                        <Response lang="zh">泵动霰弹枪准备好了。;泵动霰弹枪在手了。</Response>
+                        <Response lang="tr">Pompalı tüfek hazır.;Pompalı tüfek elimde.</Response>
+                        <Response lang="ru">Помповый дробовик готов.;Помповый дробовик в руке.</Response>
+                        <Response lang="pt">Espingarda de bombear pronta.;Espingarda de bombear na mão.</Response>
+                        <Response lang="pl">Strzelba pompowa gotowa.;Strzelba pompowa w ręku.</Response>
+                        <Response lang="ko">펌프 샷건 준비됐어.;펌프 샷건 들었어.</Response>
+                        <Response lang="ja">ポンプショットガン準備完了。;ポンプショットガンを構えた。</Response>
+                        <Response lang="it">Fucile a pompa pronto.;Fucile a pompa in mano.</Response>
+                        <Response lang="fr">Fusil à pompe prêt.;Fusil à pompe en main.</Response>
+                        <Response lang="es">Escopeta de bombeo lista.;Escopeta de bombeo en mano.</Response>
+                        <Response lang="de">Pumpgun bereit.;Hab meine Pumpgun.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCPShotgun</ActionParam>
+            <ActionParam2>PShotgun</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your auto shotgun;use auto shotgun;オートショットガンを使え;自動散弾銃を出せ;</Phrase>
+                        <Response lang="en">Auto shotgun ready.;Got my auto shotgun.</Response>
+                        <Response lang="zh">全自动霰弹枪准备好了。;全自动霰弹枪在手了。</Response>
+                        <Response lang="tr">Otomatik pompalı tüfek hazır.;Otomatik pompalı tüfek elimde.</Response>
+                        <Response lang="ru">Автоматический дробовик готов.;Автоматический дробовик в руке.</Response>
+                        <Response lang="pt">Escopeta automática pronta.;Escopeta automática na mão.</Response>
+                        <Response lang="pl">Samopowtarzalna strzelba gotowa.;Samopowtarzalna strzelba w ręku.</Response>
+                        <Response lang="ko">자동 샷건 준비됐어.;자동 샷건 들었어.</Response>
+                        <Response lang="ja">オートショットガン準備完了。;オートショットガンを構えた。</Response>
+                        <Response lang="it">Fucile automatico pronto.;Fucile automatico in mano.</Response>
+                        <Response lang="fr">Fusil à pompe automatique prêt.;Fusil automatique en main.</Response>
+                        <Response lang="es">Escopeta automática lista.;Escopeta automática en mano.</Response>
+                        <Response lang="de">Automatik-Schrotflinte bereit.;Hab meine Automatik-Schrotflinte.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCAShotgun</ActionParam>
+            <ActionParam2>AShotgun</ActionParam2>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>use your rocket launcher;use rocket launcher;use your rocket;ロケットランチャーを使え;ロケットを出せ;</Phrase>
+                        <Response lang="en">Rocket launcher ready.;Got my rocket launcher.</Response>
+                        <Response lang="zh">火箭筒准备好了。;火箭筒在手了。</Response>
+                        <Response lang="tr">Roket fırlatıcı hazır.;Roket fırlatıcı elimde.</Response>
+                        <Response lang="ru">Ракетница готова.;Ракетница в руке.</Response>
+                        <Response lang="pt">Lançador de foguetes pronto.;Lançador de foguetes na mão.</Response>
+                        <Response lang="pl">Wyrzutnia rakiet gotowa.;Wyrzutnia rakiet w ręku.</Response>
+                        <Response lang="ko">로켓 런처 준비됐어.;로켓 런처 들었어.</Response>
+                        <Response lang="ja">ロケットランチャー準備完了。;ロケットランチャーを構えた。</Response>
+                        <Response lang="it">Lanciarazzi pronto.;Lanciarazzi in mano.</Response>
+                        <Response lang="fr">Lance-roquettes prêt.;Lance-roquettes en main.</Response>
+                        <Response lang="es">Lanzacohetes listo.;Lanzacohetes en mano.</Response>
+                        <Response lang="de">Raketenwerfer bereit.;Hab meinen Raketenwerfer.</Response>
+            <ActionType>SwapWeapon</ActionType>
+            <ActionParam>gunNPCRocketLauncher</ActionParam>
+            <ActionParam2>RocketL</ActionParam2>
+        </Trigger>
+
+        <!-- === HUNGER / FOOD === -->
+        <Trigger enabled="true">
+            <Phrase>i'm hungry;got any food;お腹がすいた;食べ物ある?;onaka ga suita;tabemono aru;</Phrase>
+            <Aliases>hungry;food;お腹;onaka;食べ物;tabemono;</Aliases>
+                        <Response lang="en">Here, eat up. You look like you could use it.;Take this, you need it more than me.</Response>
+                        <Response lang="zh">拿去，吃点吧。看起来你需要。;拿着，你比我更需要。</Response>
+                        <Response lang="tr">Al, ye. Lazım gibi görünüyor.;Bunu al, sana benden daha lazım.</Response>
+                        <Response lang="ru">Держи, поешь. Вижу, тебе нужно.;Возьми это, тебе нужнее.</Response>
+                        <Response lang="pt">Toma, come. Parece que você precisa.;Pega isso, você precisa mais do que eu.</Response>
+                        <Response lang="pl">Masz, zjedz. Widać, że potrzebujesz.;Weź to, ty potrzebujesz bardziej niż ja.</Response>
+                        <Response lang="ko">받아, 먹어. 필요해 보여.;이거 가져가, 나보다 더 필요하잖아.</Response>
+                        <Response lang="ja">ほら、食え。必要そうだ。;これを取れ、俺より必要だろう。</Response>
+                        <Response lang="it">Tieni, mangia. Ne hai bisogno.;Prendi questo, ne hai più bisogno di me.</Response>
+                        <Response lang="fr">Tiens, mange. T'as l'air d'en avoir besoin.;Prends ça, t'en as plus besoin que moi.</Response>
+                        <Response lang="es">Toma, come. Buena falta te hace.;Toma esto, lo necesitas más que yo.</Response>
+                        <Response lang="de">Hier, iss was. Sieht aus, als könntest du's gebrauchen.;Nimm das, du brauchst es mehr als ich.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>foodCornMeal</ActionParam>
+            <ActionParamCount>1</ActionParamCount>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>i'm thirsty;got any water;喉が渇いた;水ある?;nodo ga kawaita;mizu aru;</Phrase>
+            <Aliases>thirsty;water;drink;喉;nodo;水;mizu;</Aliases>
+                        <Response lang="en">Thirsty? Take this — it's all I've got!;Here, drink up.</Response>
+                        <Response lang="zh">渴了？拿去，这是我全部的了！;喏，喝吧。</Response>
+                        <Response lang="tr">Susadın mı? Al, sahip olduğum bu kadar!;Buyur, iç.</Response>
+                        <Response lang="ru">Хочешь пить? Держи, это всё что у меня есть!;На, пей.</Response>
+                        <Response lang="pt">Com sede? Toma, é tudo que tenho!;Aqui, bebe.</Response>
+                        <Response lang="pl">Spragniony? Masz, to wszystko co mam!;Na, pij.</Response>
+                        <Response lang="ko">목말라? 받아, 이게 전부야!;여기, 마셔.</Response>
+                        <Response lang="ja">喉が渇いてるか？これを取れ、全部だ！;ほら、飲め。</Response>
+                        <Response lang="it">Sete? Prendi, è tutto quello che ho!;Tieni, bevi.</Response>
+                        <Response lang="fr">Soif ? Prends ça, c'est tout ce que j'ai !;Tiens, bois.</Response>
+                        <Response lang="es">¿Sed? Toma, es todo lo que tengo.;Toma, bebe.</Response>
+                        <Response lang="de">Durstig? Nimm das — ist alles, was ich hab!;Hier, trink aus.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>drinkJarBoiledWater</ActionParam>
+            <ActionParamCount>1</ActionParamCount>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>do you have any food;share some food;食べ物分けて;食料を共有して;</Phrase>
+            <Aliases>share food;分けて;共有;</Aliases>
+                        <Response lang="en">Found some rations. Here, split it with me.;I've got extra. Take some.</Response>
+                        <Response lang="zh">找到一些口粮。来，我们分着用。;我多的，拿点去。</Response>
+                        <Response lang="tr">Bazı erzak buldum. Al, paylaşalım.;Fazlası var. Biraz al.</Response>
+                        <Response lang="ru">Нашёл пайки. Держи, разделим.;У меня лишнее. Возьми.</Response>
+                        <Response lang="pt">Achei umas rações. Toma, a gente divide.;Tenho de sobra. Pega um pouco.</Response>
+                        <Response lang="pl">Znalazłem racje. Masz, podzielmy się.;Mam nadmiar. Weź trochę.</Response>
+                        <Response lang="ko">식량 찾았어. 받아, 나누자.;여분이 있어. 가져가.</Response>
+                        <Response lang="ja">食料を見つけた。ほら、分けよう。;余りがある。持っていけ。</Response>
+                        <Response lang="it">Ho trovato delle razioni. Tieni, dividiamo.;Ho qualcosa in più. Prendine un po'.</Response>
+                        <Response lang="fr">J'ai trouvé des rations. Tiens, on partage.;J'en ai en rab. Prends-en.</Response>
+                        <Response lang="es">Encontré raciones. Toma, las compartimos.;Tengo de más. Coge un poco.</Response>
+                        <Response lang="de">Hab ein paar Rationen gefunden. Hier, teilen wir.;Ich hab was übrig. Nimm dir was.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>foodCornMeal</ActionParam>
+            <ActionParamCount>2</ActionParamCount>
+        </Trigger>
+
+        <!-- === WEAPONS === -->
+        <Trigger enabled="true">
+            <Phrase>i need an axe;give me an axe;斧が欲しい;斧をください;</Phrase>
+            <Aliases>axe;斧;</Aliases>
+                        <Response lang="en">Take this. You'll need it out there.;Here, this axe is sturdy.</Response>
+                        <Response lang="zh">拿着这个。在外面会用得上。;喏，这把斧头挺结实的。</Response>
+                        <Response lang="tr">Bunu al. Dışarıda işe yarar.;Buyur, bu balta sağlam.</Response>
+                        <Response lang="ru">Возьми это. Пригодится снаружи.;На, этот топор крепкий.</Response>
+                        <Response lang="pt">Pega isso. Vai precisar lá fora.;Aqui, esse machado é resistente.</Response>
+                        <Response lang="pl">Weź to. Przyda się na zewnątrz.;Na, ta siekiera jest solidna.</Response>
+                        <Response lang="ko">이거 받아. 밖에서 필요할 거야.;여기, 이 도끼 튼튼해.</Response>
+                        <Response lang="ja">これを取れ。外で必要になる。;ほら、この斧は丈夫だ。</Response>
+                        <Response lang="it">Prendi questo. Ne avrai bisogno là fuori.;Tieni, quest'ascia è robusta.</Response>
+                        <Response lang="fr">Prends ça. Tu en auras besoin dehors.;Tiens, cette hache est solide.</Response>
+                        <Response lang="es">Toma esto. Lo necesitarás ahí fuera.;Toma, este hacha es resistente.</Response>
+                        <Response lang="de">Nimm das. Da draußen wirst du's brauchen.;Hier, diese Axt ist robust.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>meleeToolRepairT0StoneAxe</ActionParam>
+            <ActionParamCount>1</ActionParamCount>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>i need ammo;give me ammo;弾薬が欲しい;弾をください;</Phrase>
+            <Aliases>ammo;bullets;弾薬;弾;</Aliases>
+                        <Response lang="en">Here. Keep it close — the dead don't stop coming.;Take it, you'll need it.</Response>
+                        <Response lang="zh">拿去。放身边，死人停不下来的。;拿吧，会用得上的。</Response>
+                        <Response lang="tr">Al. Yanında tut, ölüler durmuyor.;Al, işe yarar.</Response>
+                        <Response lang="ru">Держи. Не выпускай из рук, мертвецы не останавливаются.;Возьми, пригодится.</Response>
+                        <Response lang="pt">Toma. Deixa à mão, os mortos não param.;Pega, vai precisar.</Response>
+                        <Response lang="pl">Masz. Trzymaj przy sobie, umarli się nie zatrzymują.;Weź, przyda się.</Response>
+                        <Response lang="ko">받아. 곁에 두고 있어, 죽은 자들은 안 멈추니까.;가져가, 필요할 거야.</Response>
+                        <Response lang="ja">ほら。手元に置いておけ、死者は止まらないから。;持っていけ、必要になる。</Response>
+                        <Response lang="it">Tieni. Tienila a portata, i morti non smettono mai di venire.;Prendila, ne avrai bisogno.</Response>
+                        <Response lang="fr">Tiens. Garde-les à portée, les morts n'arrêtent jamais.;Prends, tu en auras besoin.</Response>
+                        <Response lang="es">Toma. Tenlo cerca, los muertos no paran de venir.;Cógelo, lo necesitarás.</Response>
+                        <Response lang="de">Hier. Halt sie bereit — die Toten hören nicht auf zu kommen.;Nimm es, du wirst es brauchen.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>ammo9mmBulletBall</ActionParam>
+            <ActionParamCount>5</ActionParamCount>
+        </Trigger>
+
+        <Trigger enabled="true">
+            <Phrase>give me a weapon;i need a weapon;武器が欲しい;武器をください;</Phrase>
+            <Aliases>weapon;gun;武器;</Aliases>
+                        <Response lang="en">Be careful with it. Ammo's scarce.;Here, stay sharp.</Response>
+                        <Response lang="zh">小心用。弹药不多了。;喏，保持警惕。</Response>
+                        <Response lang="tr">Dikkatli kullan. Mermi kıt.;Buyur, tetikte ol.</Response>
+                        <Response lang="ru">Осторожно с этим. Патроны на счету.;На, будь начеку.</Response>
+                        <Response lang="pt">Cuidado com isso. Munição é escassa.;Aqui, fica alerta.</Response>
+                        <Response lang="pl">Ostrożnie z tym. Amunicja jest na wagę złota.;Na, bądź czujny.</Response>
+                        <Response lang="ko">조심해서 써. 탄약이 귀해.;여기, 긴장 늦추지 마.</Response>
+                        <Response lang="ja">気をつけろよ。弾薬は貴重だ。;ほら、気を張れ。</Response>
+                        <Response lang="it">Usala con cura. Le munizioni scarseggiano.;Tieni, rimani vigile.</Response>
+                        <Response lang="fr">Fais attention avec ça. Les munitions sont rares.;Tiens, reste vigilant.</Response>
+                        <Response lang="es">Ten cuidado con eso. Escasea la munición.;Toma, mantente alerta.</Response>
+                        <Response lang="de">Geh vorsichtig damit um. Munition ist knapp.;Hier, bleib wachsam.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>gunHandgunT0PipePistol</ActionParam>
+            <ActionParamCount>1</ActionParamCount>
+        </Trigger>
+
+        <!-- === STORIES / CUSTOM DIALOG === -->
+        <!-- Response is empty - picks randomly from the NPC's personality <Stories> pool in personalities.xml -->
+        <Trigger enabled="true">
+            <Phrase>tell me a story;tell me something;what was it like before;話を教えて;昔の話を;hanashi o oshiete;mukashi no hanashi;以前はどうだった?;</Phrase>
+            <Aliases>story;before;past;話;hanashi;昔;mukashi;</Aliases>
+            <Response></Response>
+            <ActionType>CustomDialog</ActionType>
+        </Trigger>
+
+        <!-- === HEALING === -->
+        <Trigger enabled="true">
+            <Phrase>i need healing;patch me up;治療して;手当を;chiryo shite;teate wo;</Phrase>
+            <Aliases>heal;hurt;bandage;治療;chiryo;手当;teate;</Aliases>
+                        <Response lang="en">Here, apply these. You'll be back on your feet soon.;Take this, it'll help.</Response>
+                        <Response lang="zh">拿去，敷上。很快就会好的。;拿着，有用的。</Response>
+                        <Response lang="tr">Al, sür. Kısa sürede ayağa kalkarsın.;Bunu al, yardımcı olur.</Response>
+                        <Response lang="ru">Держи, намажь. Скоро встанешь на ноги.;Возьми, поможет.</Response>
+                        <Response lang="pt">Toma, aplica isso. Logo você vai estar de pé.;Pega isso, vai ajudar.</Response>
+                        <Response lang="pl">Masz, posmaruj. Szybko staniesz na nogi.;Weź to, pomoże.</Response>
+                        <Response lang="ko">받아, 발라. 금방 나아질 거야.;이거 받아, 도움이 될 거야.</Response>
+                        <Response lang="ja">ほら、塗っておけ。すぐ元気になる。;これを持っていけ、助けになる。</Response>
+                        <Response lang="it">Tieni, applicala. Sarai in piedi presto.;Prendi questo, ti aiuterà.</Response>
+                        <Response lang="fr">Tiens, applique ça. Tu seras vite sur pied.;Prends ça, ça va aider.</Response>
+                        <Response lang="es">Toma, aplícate esto. Pronto estarás en pie.;Toma esto, te ayudará.</Response>
+                        <Response lang="de">Hier, leg die an. Du bist bald wieder auf den Beinen.;Nimm das, es hilft.</Response>
+            <ActionType>GiveItem</ActionType>
+            <ActionParam>medicalFirstAidBandage</ActionParam>
+            <ActionParamCount>1</ActionParamCount>
+        </Trigger>
+
+        <!-- === INVENTORY / TRADE === -->
+        <!-- Trader-specific triggers: open the trader's trade dialog (simulates pressing E).
+             Traders have no leader, so these always execute regardless of leader checks. -->
+        <Trigger enabled="true">
+            <Phrase>let's trade;lets trade;open trade;trade with me;i want to trade;show me your wares;what are you selling;what do you sell;取引しよう;トレードして;商売を見せて;torihikishou;torēdo shite;</Phrase>
+            <Aliases>trade;shop;buy;sell;wares;取引;torihiki;トレード;torēdo;</Aliases>
+                        <Response lang="en">Take a look at my wares.;Here, have a look at what I've got.;Go ahead, take a look.;Let me show you what I've been carrying.;Sure, let's see what we can work with.;Of course, take your time.</Response>
+                        <Response lang="zh">看看我的货。;喏，看看我有什么。;随便看。;让我给你看看我有什么。;当然，看看能怎么合作。;当然，慢慢来。</Response>
+                        <Response lang="tr">Mallarıma bir bak.;Buyur, neler var gör.;Bak bakalım.;Neler taşıdığımı göstereyim.;Tabii, ne yapabileceğimize bakalım.;Tabii, acele etme.</Response>
+                        <Response lang="ru">Взгляни на мой товар.;Держи, смотри что есть.;Смотри, не стесняйся.;Дай покажу, что у меня.;Конечно, посмотрим что можно сделать.;Конечно, не торопись.</Response>
+                        <Response lang="pt">Dá uma olhada na minha mercadoria.;Aqui, vê o que eu tenho.;Pode olhar.;Deixa eu te mostrar o que trago.;Claro, vamos ver o que dá pra fazer.;Claro, pode ficar à vontade.</Response>
+                        <Response lang="pl">Rzuć okiem na mój towar.;Masz, zobacz co mam.;Patrz, nie krępuj się.;Pozwól, że pokażę co mam.;Jasne, zobaczymy co można zrobić.;Jasne, nie śpiesz się.</Response>
+                        <Response lang="ko">내 물건 한번 봐봐.;여기, 뭐가 있나 봐.;봐도 돼.;내가 가진 거 보여줄게.;물론, 뭘 할 수 있나 봐보자.;물론, 천천히 봐.</Response>
+                        <Response lang="ja">俺の商品を見てくれ。;ほら、何があるか見てくれ。;どうぞ、見ていいぞ。;持ってるものを見せよう。;いいぞ、何ができるか見てみよう。;もちろん、ゆっくり見てくれ。</Response>
+                        <Response lang="it">Dai un'occhiata alla mia merce.;Tieni, guarda cosa ho.;Vai, guarda.;Lasciami mostrarti cosa porto.;Certo, vediamo cosa si può fare.;Certo, prenditi il tempo che vuoi.</Response>
+                        <Response lang="fr">Jette un œil à ma marchandise.;Tiens, regarde ce que j'ai.;Vas-y, regarde.;Laisse-moi te montrer ce que je trimballe.;Bien sûr, voyons ce qu'on peut faire.;Bien sûr, prends ton temps.</Response>
+                        <Response lang="es">Echa un vistazo a mi mercancía.;Toma, mira lo que tengo.;Adelante, échale un ojo.;Deja que te enseñe lo que llevo.;Claro, veamos qué se puede hacer.;Por supuesto, tómate tu tiempo.</Response>
+                        <Response lang="de">Wirf einen Blick auf meine Waren.;Hier, schau dir an, was ich hab.;Nur zu, schau dich um.;Lass mich dir zeigen, was ich so dabei hab.;Klar, mal sehen, was sich machen lässt.;Natürlich, lass dir Zeit.</Response>
+            <ActionType>OpenTraderInventory</ActionType>
+        </Trigger>
+
+        <!-- Hired NPC inventory: open the NPC's inventory/trade window (SCore ExecuteCMD).
+             Requires the player to be the NPC's leader. -->
+        <Trigger enabled="true">
+            <Phrase>show me what you have;let me see your stuff;open your inventory;open inventory;what do you have;can i see your inventory;持っている物を見せて;インベントリを開いて;motte iru mono o misete;inventori o hiraite;</Phrase>
+            <Aliases>backpack;gear;bag;inventory;バックパック;bakkupakku;インベントリ;inventori;</Aliases>
+                        <Response lang="en">Take a look. Let me know if you need anything.;Here, have a look at what I've got.;Go ahead, take a look.;Let me show you what I've been carrying.;Sure, let's see what we can work with.;Of course, take your time.</Response>
+                        <Response lang="zh">看看吧。需要什么就说。;喏，看看我有什么。;随便看。;让我给你看看我有什么。;当然，看看能怎么合作。;当然，慢慢来。</Response>
+                        <Response lang="tr">Bak bakalım. Bir şeye ihtiyacın olursa söyle.;Buyur, neler var gör.;Bak bakalım.;Neler taşıdığımı göstereyim.;Tabii, ne yapabileceğimize bakalım.;Tabii, acele etme.</Response>
+                        <Response lang="ru">Смотри. Скажи, если что нужно.;Держи, смотри что есть.;Смотри, не стесняйся.;Дай покажу, что у меня.;Конечно, посмотрим что можно сделать.;Конечно, не торопись.</Response>
+                        <Response lang="pt">Olha aí. Me fala se precisar de algo.;Aqui, vê o que eu tenho.;Pode olhar.;Deixa eu te mostrar o que trago.;Claro, vamos ver o que dá pra fazer.;Claro, pode ficar à vontade.</Response>
+                        <Response lang="pl">Patrz. Powiedz jak potrzebujesz czegoś.;Masz, zobacz co mam.;Patrz, nie krępuj się.;Pozwól, że pokażę co mam.;Jasne, zobaczymy co można zrobić.;Jasne, nie śpiesz się.</Response>
+                        <Response lang="ko">봐봐. 필요한 거 있으면 말해.;여기, 뭐가 있나 봐.;봐도 돼.;내가 가진 거 보여줄게.;물론, 뭘 할 수 있나 봐보자.;물론, 천천히 봐.</Response>
+                        <Response lang="ja">見てくれ。何か必要なら言ってくれ。;ほら、何があるか見てくれ。;どうぞ、見ていいぞ。;持ってるものを見せよう。;いいぞ、何ができるか見てみよう。;もちろん、ゆっくり見てくれ。</Response>
+                        <Response lang="it">Guarda pure. Dimmi se hai bisogno di qualcosa.;Tieni, guarda cosa ho.;Vai, guarda.;Lasciami mostrarti cosa porto.;Certo, vediamo cosa si può fare.;Certo, prenditi il tempo che vuoi.</Response>
+                        <Response lang="fr">Regarde. Dis-moi si tu as besoin de quelque chose.;Tiens, regarde ce que j'ai.;Vas-y, regarde.;Laisse-moi te montrer ce que je trimballe.;Bien sûr, voyons ce qu'on peut faire.;Bien sûr, prends ton temps.</Response>
+                        <Response lang="es">Echa un vistazo. Avísame si necesitas algo.;Toma, mira lo que tengo.;Adelante, échale un ojo.;Deja que te enseñe lo que llevo.;Claro, veamos qué se puede hacer.;Por supuesto, tómate tu tiempo.</Response>
+                        <Response lang="de">Schau ruhig. Sag Bescheid, wenn du was brauchst.;Hier, schau dir an, was ich hab.;Nur zu, schau dich um.;Lass mich dir zeigen, was ich so dabei hab.;Klar, mal sehen, was sich machen lässt.;Natürlich, lass dir Zeit.</Response>
+            <ActionType>OpenInventory</ActionType>
+        </Trigger>
+
+        <!-- === SIMPLE ENGAGEMENT MODEL === -->
+        <!-- vcEngage cvar gates hired combat via MayEngage; 0=assist only (default), 1=free-fight, 2=passive/never. -->
+        <!-- Passive: never engage === not even self-defense. Leader is moving through/fleeing. Clears targets + cancels formation. -->
+        <Trigger enabled="true">
+            <Phrase>disengage;break off;fall back;hold fire;stand down;leave it;retreat;ignore them;</Phrase>
+            <Aliases>back off;leave them;</Aliases>
+            <Response lang="en">Standing down.;Ignoring threats.;Will not engage.</Response>
+            <ActionType>SetEngage</ActionType>
+            <ActionParam>2</ActionParam>
+        </Trigger>
+
+        <!-- Engage: free-fight any enemy on sight -->
+        <Trigger enabled="true">
+            <Phrase>weapons free;attack;engage;fight them;</Phrase>
+            <Aliases>engage;weapons free;</Aliases>
+            <Response lang="en">Weapons free.;Engaging.;On it.</Response>
+            <ActionType>SetEngage</ActionType>
+            <ActionParam>1</ActionParam>
+        </Trigger>
+
+        <!-- Assist only: back to default === self-defense + leader-assist, no autonomous attack -->
+        <Trigger enabled="true">
+            <Phrase>cover me;defend only;at ease;normal engagement;</Phrase>
+            <Response lang="en">Covering you.;Defensive only.;Understood.</Response>
+            <ActionType>SetEngage</ActionType>
+            <ActionParam>0</ActionParam>
+        </Trigger>
+
+        <!-- === COMBAT MODE SWITCHING (DEFERRED) === -->
+        <!-- Retired in favor of simple engagement model. Code dormant for future richer-mode work. -->
+        <!-- Mode 0 = Hunting (default): NPCs attack freely at will -->
+        <Trigger enabled="false">
+            <Phrase>hunting mode;use hunting mode;switch to hunting mode;狩猟モード;ハンティングモード;kariryuu moodo;hantingu moodo;</Phrase>
+            <Aliases>hunting;狩猟;kariryuu;ハンティング;hantingu;</Aliases>
+                        <Response lang="en">Switched to hunting mode. We'll attack on our own.;Hunting mode active. We'll engage freely.;Understood, hunting mode.</Response>
+                        <Response lang="zh">猎杀模式激活。我们自己判断攻击。;猎杀模式开启。自由交战。;明白，猎杀模式。</Response>
+                        <Response lang="tr">Av modu aktif. Kendi inisiyatifimizle saldırıyoruz.;Av modu açık. Özgürce çatışıyoruz.;Anlaşıldı, av modu.</Response>
+                        <Response lang="ru">Режим охоты активирован. Атакуем сами.;Режим охоты включён. Бьёмся вольно.;Понял, режим охоты.</Response>
+                        <Response lang="pt">Modo caça ativado. Atacamos por conta própria.;Modo caça ativo. Combatemos livremente.;Entendido, modo caça.</Response>
+                        <Response lang="pl">Tryb łowiecki aktywny. Atakujemy z własnej inicjatywy.;Tryb łowiecki włączony. Walczymy swobodnie.;Rozumiem, tryb łowiecki.</Response>
+                        <Response lang="ko">사냥 모드 활성화. 우리가 알아서 공격할게.;사냥 모드 시작. 자유롭게 교전.;알겠어, 사냥 모드.</Response>
+                        <Response lang="ja">ハントモード起動。自分たちで判断して攻撃する。;ハントモード有効。自由に戦闘開始。;了解、ハントモード。</Response>
+                        <Response lang="it">Modalità caccia attivata. Attacchiamo di nostra iniziativa.;Modalità caccia attiva. Ingaggiamo liberamente.;Capito, modalità caccia.</Response>
+                        <Response lang="fr">Mode chasse activé. On attaque de notre propre chef.;Mode chasse actif. On engage librement.;Compris, mode chasse.</Response>
+                        <Response lang="es">Modo caza activado. Atacaremos por nuestra cuenta.;Modo caza activo. Entraremos en combate libremente.;Entendido, modo caza.</Response>
+                        <Response lang="de">Auf Jagdmodus umgestellt. Wir greifen von selbst an.;Jagdmodus aktiv. Wir kämpfen frei.;Verstanden, Jagdmodus.</Response>
+            <ActionType>SetCombatMode</ActionType>
+            <ActionParam>0</ActionParam>
+        </Trigger>
+
+        <!-- Mode 1 = Threat Control: (not hooked up yet) NPCs only attack when player is actively being attacked or attacking -->
+        <Trigger enabled="false">
+            <Phrase>threat control mode;use threat control;switch to threat control;脅威制御モード;</Phrase>
+                        <Response lang="en">Threat control mode. We'll only engage when you're in a fight.;Understood, threat control active.;Threat control mode set.</Response>
+                        <Response lang="zh">威胁控制模式。只在你战斗时介入。;明白，威胁控制激活。;威胁控制模式已设置。</Response>
+                        <Response lang="tr">Tehdit kontrolü modu. Sadece sen savaşırken müdahale ediyoruz.;Anlaşıldı, tehdit kontrolü aktif.;Tehdit kontrolü modu ayarlandı.</Response>
+                        <Response lang="ru">Контроль угроз. Вступаем только если ты в бою.;Понял, контроль угроз включён.;Режим контроля угроз установлен.</Response>
+                        <Response lang="pt">Controle de ameaças. Só atuamos se você estiver em combate.;Entendido, controle de ameaças ativo.;Modo controle de ameaças definido.</Response>
+                        <Response lang="pl">Kontrola zagrożeń. Interweniujemy tylko gdy walczysz.;Rozumiem, kontrola zagrożeń aktywna.;Tryb kontroli zagrożeń ustawiony.</Response>
+                        <Response lang="ko">위협 제어 모드. 네가 싸울 때만 개입할게.;알겠어, 위협 제어 활성화.;위협 제어 모드 설정.</Response>
+                        <Response lang="ja">脅威制御モード。お前が戦ってる時だけ介入する。;了解、脅威制御有効。;脅威制御モード設定。</Response>
+                        <Response lang="it">Controllo minacce. Interveniamo solo se sei in combattimento.;Capito, controllo minacce attivo.;Modalità controllo minacce impostata.</Response>
+                        <Response lang="fr">Mode contrôle des menaces. On n'intervient que si tu te bats.;Compris, contrôle des menaces actif.;Mode contrôle des menaces réglé.</Response>
+                        <Response lang="es">Modo control de amenazas. Solo lucharemos cuando estés en combate.;Entendido, control de amenazas activo.;Modo control de amenazas fijado.</Response>
+                        <Response lang="de">Bedrohungskontrolle. Wir greifen nur ein, wenn du im Kampf bist.;Verstanden, Bedrohungskontrolle aktiv.;Bedrohungskontrolle eingestellt.</Response>
+            <ActionType>SetCombatMode</ActionType>
+            <ActionParam>1</ActionParam>
+        </Trigger>
+
+        <!-- Mode 2 = Full Control: NPCs never attack unless player explicitly engages a target -->
+        <Trigger enabled="false">
+            <Phrase>full control;use full control;switch to full control;完全制御モード;フルコントロール;kanzen seigyo moodo;furu kontorooru;</Phrase>
+            <Aliases>full control;完全制御;kanzen;フルコントロール;furu;</Aliases>
+                        <Response lang="en">Full control mode. We won't attack unless you tell us to.;Understood, full control active.;Full control mode set.</Response>
+                        <Response lang="zh">完全控制模式。不发命令不攻击。;明白，完全控制激活。;完全控制模式已设置。</Response>
+                        <Response lang="tr">Tam kontrol modu. Sadece senin emrinle saldırıyoruz.;Anlaşıldı, tam kontrol aktif.;Tam kontrol modu ayarlandı.</Response>
+                        <Response lang="ru">Полный контроль. Атакуем только по команде.;Понял, полный контроль включён.;Режим полного контроля установлен.</Response>
+                        <Response lang="pt">Controle total. Só atacamos sob sua ordem.;Entendido, controle total ativo.;Modo controle total definido.</Response>
+                        <Response lang="pl">Pełna kontrola. Atakujemy tylko na twój rozkaz.;Rozumiem, pełna kontrola aktywna.;Tryb pełnej kontroli ustawiony.</Response>
+                        <Response lang="ko">완전 제어 모드. 명령 없이는 공격 안 해.;알겠어, 완전 제어 활성화.;완전 제어 모드 설정.</Response>
+                        <Response lang="ja">完全制御モード。命令がない限り攻撃しない。;了解、完全制御有効。;完全制御モード設定。</Response>
+                        <Response lang="it">Controllo totale. Non attacchiamo senza i tuoi ordini.;Capito, controllo totale attivo.;Modalità controllo totale impostata.</Response>
+                        <Response lang="fr">Mode contrôle total. On n'attaque que sur ton ordre.;Compris, contrôle total actif.;Mode contrôle total réglé.</Response>
+                        <Response lang="es">Modo control total. No atacaremos salvo que lo ordenes.;Entendido, control total activo.;Modo control total fijado.</Response>
+                        <Response lang="de">Volle Kontrolle. Wir greifen nur an, wenn du es befiehlst.;Verstanden, volle Kontrolle aktiv.;Voller Kontrollmodus eingestellt.</Response>
+            <ActionType>SetCombatMode</ActionType>
+            <ActionParam>2</ActionParam>
+        </Trigger>
+    </Triggers>
+</PhraseTriggers>

@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<!--
+    SupertonicConfig.xml - supertonic-server configuration only.
+
+    This file is read by the precompiled supertonic-server.exe binary at startup.
+    Do not rename or move - the path is hardcoded in the executable.
+
+    === Fields ===
+      ModelDirectory: relative path from supertonic-server.exe to the Supertonic model folder.
+                      Resolved as: <exe_dir>/<ModelDirectory>
+                      Default points to ../../Resources/Supertonic (up two levels from bin/).
+      OnnxSubdir: subfolder inside ModelDirectory containing the 4 ONNX models.
+      UnicodeIndexer: filename of the unicode_indexer.json inside OnnxSubdir.
+      VoiceStyleDir: directory containing voice style JSON files (relative to exe).
+
+      TotalStep: denoising steps, 5 (fast) to 12 (high quality), default 6.
+      Speed: default speech speed factor, 0.7 (slow) to 2.0 (fast), default 1.05.
+
+      IntraOpNumThreads: ORT intra-op threads; 0 or blank means clamp(ProcessorCount, 2, 4).
+      GraphOptimization: all | extended | basic | none.
+      EnableMemoryPattern: true | false - reduces alloc overhead per call.
+
+    === VoiceMap ===
+      Each <Voice> maps a user-friendly alias to a JSON voice style file.
+      Aliases are what you use in personalities.xml (e.g., Alex, Sarah).
+-->
+<SupertonicConfig>
+
+  <!-- Path to the Supertonic model root (relative to bin/SupertonicServer/) -->
+  <ModelDirectory>..\..\Resources\Supertonic</ModelDirectory>
+
+  <!-- Subfolder containing the 4 ONNX models -->
+  <OnnxSubdir>onnx</OnnxSubdir>
+
+  <!-- Unicode indexer filename inside OnnxSubdir -->
+  <UnicodeIndexer>unicode_indexer.json</UnicodeIndexer>
+
+  <!-- Directory containing voice style JSON files (relative to bin/SupertonicServer/) -->
+  <VoiceStyleDir>..\..\Resources\Supertonic\voice_styles</VoiceStyleDir>
+
+  <!-- Denoising steps: 5 (fast) to 12 (high quality), default 6 -->
+  <TotalStep>6</TotalStep>
+
+  <!-- Default speech speed factor: 0.7 (slow) to 2.0 (fast), default 1.05 -->
+  <Speed>1.05</Speed>
+
+  <!-- ORT intra-op threads: 0 or blank means clamp(ProcessorCount, 2, 4) -->
+  <IntraOpNumThreads>4</IntraOpNumThreads>
+
+  <!-- Graph optimization: all | extended | basic | none -->
+  <GraphOptimization>all</GraphOptimization>
+
+  <!-- Enable memory pattern pooling (reduces alloc overhead per call) -->
+  <EnableMemoryPattern>true</EnableMemoryPattern>
+
+  <!-- Voice alias to JSON file mapping -->
+  <!-- Native Supertonic aliases (simple names) -->
+  <VoiceMap>
+    <Voice alias="harley"    file="harley.json" />
+    <Voice alias="Alex"      file="M1.json" />
+    <Voice alias="James"     file="M2.json" />
+    <Voice alias="Robert"    file="M3.json" />
+    <Voice alias="Sam"       file="M4.json" />
+    <Voice alias="Daniel"    file="M5.json" />
+    <Voice alias="Sarah"     file="F1.json" />
+    <Voice alias="Lily"      file="F2.json" />
+    <Voice alias="Jessica"   file="F3.json" />
+    <Voice alias="Olivia"    file="F4.json" />
+    <Voice alias="Emily"     file="F5.json" />
+
+    <!-- Kokoro voice aliases (from personalities.xml) - mapped to Supertonic presets -->
+    <!-- American Male voices - M1 to M5 -->
+    <Voice alias="am_adam"    file="M1.json" />
+    <Voice alias="am_echo"    file="M2.json" />
+    <Voice alias="am_eric"    file="M3.json" />
+    <Voice alias="am_fenrir"  file="M4.json" />
+    <Voice alias="am_liam"    file="M5.json" />
+    <Voice alias="am_michael" file="M1.json" />
+    <Voice alias="am_onyx"    file="M2.json" />
+    <Voice alias="am_puck"    file="M3.json" />
+    <Voice alias="am_santa"   file="M4.json" />
+
+    <!-- American Female voices - F1 to F5 -->
+    <Voice alias="af_alloy"   file="F1.json" />
+    <Voice alias="af_aoede"   file="F2.json" />
+    <Voice alias="af_bella"   file="F3.json" />
+    <Voice alias="af_heart"   file="F4.json" />
+    <Voice alias="af_jessica" file="F5.json" />
+    <Voice alias="af_kore"    file="F1.json" />
+    <Voice alias="af_nicole"  file="F2.json" />
+    <Voice alias="af_nova"    file="F3.json" />
+    <Voice alias="af_river"   file="F4.json" />
+    <Voice alias="af_sarah"   file="F5.json" />
+    <Voice alias="af_sky"     file="F1.json" />
+
+    <!-- British Male voices - M1 to M5 -->
+    <Voice alias="bm_daniel"  file="M1.json" />
+    <Voice alias="bm_fable"   file="M2.json" />
+    <Voice alias="bm_george"  file="M3.json" />
+    <Voice alias="bm_lewis"   file="M4.json" />
+
+    <!-- British Female voices - F1 to F5 -->
+    <Voice alias="bf_alice"   file="F1.json" />
+    <Voice alias="bf_emma"    file="F2.json" />
+    <Voice alias="bf_isabella" file="F3.json" />
+    <Voice alias="bf_lily"    file="F4.json" />
+
+    <!-- Spanish voices -->
+    <Voice alias="ef_dora"    file="F1.json" />
+    <Voice alias="em_alex"    file="M1.json" />
+    <Voice alias="em_santa"   file="M2.json" />
+
+    <!-- Finnish/Hindi/Irish voices -->
+    <Voice alias="ff_siwis"   file="F1.json" />
+    <Voice alias="hf_alpha"   file="F2.json" />
+    <Voice alias="hf_beta"    file="F3.json" />
+    <Voice alias="hm_omega"   file="M1.json" />
+    <Voice alias="hm_psi"     file="M2.json" />
+    <Voice alias="if_sara"    file="F4.json" />
+    <Voice alias="im_nicola"  file="M3.json" />
+
+    <!-- Japanese voices -->
+    <Voice alias="jf_alpha"       file="F1.json" />
+    <Voice alias="jf_gongitsune"  file="F2.json" />
+    <Voice alias="jf_nezumi"      file="F3.json" />
+    <Voice alias="jf_tebukuro"    file="F4.json" />
+    <Voice alias="jm_kumo"        file="M1.json" />
+
+    <!-- Polish voices -->
+    <Voice alias="pf_dora"    file="F1.json" />
+    <Voice alias="pm_alex"    file="M1.json" />
+    <Voice alias="pm_santa"   file="M2.json" />
+
+    <!-- Chinese voices -->
+    <Voice alias="zf_xiaobei" file="F1.json" />
+    <Voice alias="zf_xiaoni"  file="F2.json" />
+    <Voice alias="zf_xiaoxiao" file="F3.json" />
+    <Voice alias="zf_xiaoyi"  file="F4.json" />
+    <Voice alias="zm_yunjian" file="M1.json" />
+    <Voice alias="zm_yunxi"   file="M2.json" />
+    <Voice alias="zm_yunxia"  file="M3.json" />
+    <Voice alias="zm_yunyang" file="M4.json" />
+  </VoiceMap>
+
+</SupertonicConfig>

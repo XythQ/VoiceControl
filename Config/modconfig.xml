@@ -1,0 +1,359 @@
+<?xml version="1.0"?>
+<!--
+    NPCVoiceControl - Unified Configuration
+
+    All engine/runtime settings in one file.
+    User-facing configs (personalities.xml, phrasetriggers.xml) remain separate.
+
+    === TTS Section ===
+      Controls text-to-speech via the selected engine (sherpa or supertonic).
+      Enabled: turn TTS on/off globally.
+      TtsEngine: "sherpa" (Kokoro, port 5053) or "supertonic" (Supertonic 3, port 5054).
+                 The port is derived automatically - only set ServerUrl for a remote server.
+      ServerUrl: auto-derived from TtsEngine. Set this only for a custom/remote endpoint.
+      TimeoutSeconds: how long to wait for a response before giving up.
+      UseGpu: set true if you have a CUDA-capable GPU and sherpa-server supports it.
+
+    === STT Section ===
+      Controls the Whisper speech-to-text engine via whisper-server.
+      Enabled: turn STT on/off globally.
+      ServerUrl: must match whisper-server port (default 5052).
+      BeamSize: higher = more accurate but slower (1-5 recommended).
+      LanguageLocked: legacy flag, superseded by Language below.
+      Language: ISO 639-1 code passed to whisper-server as the language flag.
+                Default "en" forces English transcription (most reliable for short clips).
+                Use "ja" for Japanese, "zh" for Chinese, "fr" for French, etc.
+                Set to "auto" for auto-detection (less reliable on short/noisy clips).
+      Model: leave empty to auto-detect ggml-*.bin in bin/WhisperServer/.
+      Translate: true translates non-English speech to English text.
+      Prompt: keyword hints that improve Whisper accuracy for 7DTD context.
+      PushToTalkKey: key held while speaking (default V).
+      WakeWordEnabled: hands-free mode using a wake-word model.
+      WakeWordModel: which wake-word model to load (hey_marvin_v0.1 is default).
+      WakeWordThreshold: sensitivity 0-1 (higher = less false triggers).
+      VadSilenceMs: milliseconds of silence before recording stops.
+
+    === LLM Section ===
+      Controls the local language model via llama-server.
+      Endpoint: URL for the OpenAI-compatible chat completions API.
+      ModelFilename: leave empty to use default model from llama-server config.
+      Model: model name identifier (used in logs/UI).
+      MaxTokens: maximum response length in tokens (64-2048).
+      Temperature: randomness 0-1 (higher = more creative, lower = more focused).
+      SystemPrompt: the base personality injected into every NPC conversation.
+      ContextMemory: how many recent exchanges to keep in context (3-20).
+      ShowTypingIndicator: show a "typing..." tooltip while waiting for response.
+      TypingDelayMs: per-character delay for the typewriter effect in milliseconds (50=fast, 75=natural, 150=dramatic).
+      MaxResponseLength: hard cap on response characters (prevents very long speeches).
+      ActionsEnabled: allow LLM to output action commands like [Hire].
+      WildCombatChatCooldownSeconds: seconds a wild NPC stays uninterruptible after its last combat target dies (default 5).
+      ContextSize: llama-server KV cache window in tokens. 8192 = default (8 GB+ VRAM). 4096 = low-VRAM (6 GB cards, use with IQ4_NL model). See inline comment for full range.
+
+    === Prompt Section ===
+      BasePrompt: fallback system prompt if SystemPrompt above is empty.
+      TtsRule: injected into the prompt when TTSLanguage is Japanese (j).
+               Forces the LLM to output Kanji/Hiragana/Katakana for proper TTS.
+      ChineseTtsRule: same as TtsRule but for Simplified Chinese (z).
+
+    === RAG Section ===
+      ExtractionPrompt: system prompt sent to the LLM to extract player facts from conversations.
+      ExtractionUserPrefix: prepended to the transcript before sending to the extractor.
+      ExtractionTemperature: 0.0 = deterministic, higher = more creative (0.0-2.0).
+      MaxExtractedFacts: cap on facts per extraction to prevent LLM hallucination bloat (min 1).
+      MinFlushMessages: skip flush if buffer has fewer messages than this (prevents 2-message NONE flushes).
+      ExtractionIdleSeconds: idle time before extraction fires (default 100s). Higher = fewer extractions.
+-->
+<XNPCVoiceControl>
+
+    <!-- ================================================================ -->
+    <!-- TTS: Text-to-Speech                                              -->
+    <!-- TtsEngine selects which TTS backend to start and use.            -->
+    <!--   sherpa     = Kokoro via sherpa-server (port 5053, default)     -->
+    <!--   supertonic = Supertonic 3 via supertonic-server (port 5054)    -->
+    <!-- Only the selected engine is started - not both.                  -->
+    <!-- ServerUrl: optional override for a REMOTE/custom TTS server;     -->
+    <!--              leave unset to use the port for the selected TtsEngine -->
+    <!-- ================================================================ -->
+    <TTS>
+        <Enabled>true</Enabled>
+        <TtsEngine>supertonic</TtsEngine>
+        <TimeoutSeconds>30</TimeoutSeconds>
+        <UseGpu>false</UseGpu>
+
+        <!-- Audio Playback -->
+        <Volume>0.8</Volume>
+        <MaxDistance>40</MaxDistance>
+        <MinDistance>2</MinDistance>
+        <SpeechRate>1.0</SpeechRate>
+
+        <!-- Voice Defaults (overridden per-NPC by personalities.xml) -->
+        <DefaultVoice>af_heart</DefaultVoice>
+        <TraderVoice>am_adam</TraderVoice>
+        <CompanionVoice>af_sarah</CompanionVoice>
+        <BanditVoice>am_eric</BanditVoice>
+
+        <!-- Face Lip-Sync (blendshape driver) -->
+        <FaceLipSyncEnabled>true</FaceLipSyncEnabled>
+        <FaceLipSyncGain>7</FaceLipSyncGain>
+        <FaceLipSyncAttack>35</FaceLipSyncAttack>
+        <FaceLipSyncRelease>12</FaceLipSyncRelease>
+        <FaceLipSyncNoiseGate>0.015</FaceLipSyncNoiseGate>
+        <FaceLipSyncMaxWeight>100</FaceLipSyncMaxWeight>
+        <FaceLipSyncBlinkEnabled>true</FaceLipSyncBlinkEnabled>
+        <FaceLipSyncBlinkIntervalMin>2.0</FaceLipSyncBlinkIntervalMin>
+        <FaceLipSyncBlinkIntervalMax>6.0</FaceLipSyncBlinkIntervalMax>
+        <FaceLipSyncBlinkDurationMs>120</FaceLipSyncBlinkDurationMs>
+
+        <!-- Mode: auto | off | blendshape | animator | procedural -->
+        <FaceLipSyncMode>auto</FaceLipSyncMode>
+        <!-- Animator Float parameter name (default "IsTalking") -->
+        <FaceLipSyncAnimParam>IsTalking</FaceLipSyncAnimParam>
+
+        <!-- Procedural jaw (tier 3) — runtime blendshape from head-weighted chin verts -->
+        <!-- Position knobs are fractions of head-local bbox range (0-1), mapped at bake time -->
+        <FaceLipSyncProcOpenAngle>6</FaceLipSyncProcOpenAngle>
+        <FaceLipSyncProcLowerMaxFrac>0.40</FaceLipSyncProcLowerMaxFrac>
+        <FaceLipSyncProcForwardMinFrac>0.61</FaceLipSyncProcForwardMinFrac>
+        <FaceLipSyncProcHingeYFrac>0.21</FaceLipSyncProcHingeYFrac>
+        <FaceLipSyncProcHingeZFrac>0.36</FaceLipSyncProcHingeZFrac>
+        <FaceLipSyncProcTestHold>false</FaceLipSyncProcTestHold>
+
+        <!-- Procedural blink/wink (tier 3 fallback) - runtime blendshape from head-weighted eye verts.
+             Baked in the same pass as ProcJawOpen. Used only when no artist "blink" blendshape exists. -->
+        <FaceLipSyncProcBlinkEyeYFrac>0.31</FaceLipSyncProcBlinkEyeYFrac>
+        <FaceLipSyncProcBlinkBandHeightFrac>0.05</FaceLipSyncProcBlinkBandHeightFrac>
+        <FaceLipSyncProcBlinkBandWidthFrac>0.1</FaceLipSyncProcBlinkBandWidthFrac>
+        <FaceLipSyncProcBlinkCloseAmount>0.95</FaceLipSyncProcBlinkCloseAmount>
+        <FaceLipSyncProcBlinkForwardMinFrac>0.7</FaceLipSyncProcBlinkForwardMinFrac>
+        <FaceLipSyncProcBlinkWinkMode>off</FaceLipSyncProcBlinkWinkMode>
+        <FaceLipSyncProcBlinkWinkChance>0.2</FaceLipSyncProcBlinkWinkChance>
+
+        <!-- Head Gestures (nod on accept, shake on reject) -->
+        <HeadGesturesEnabled>true</HeadGesturesEnabled>
+        <HeadGestureParam>IdleVar</HeadGestureParam>
+        <HeadGestureNodValue>1</HeadGestureNodValue>
+        <HeadGestureShakeValue>2</HeadGestureShakeValue>
+        <HeadGestureNeutralValue>0</HeadGestureNeutralValue>
+        <HeadGestureHoldSeconds>1.5</HeadGestureHoldSeconds>
+    </TTS>
+
+    <!-- ================================================================ -->
+    <!-- STT: Speech-to-Text (Whisper + whisper-server)                   -->
+    <!-- ================================================================ -->
+    <STT>
+        <Enabled>true</Enabled>
+        <ServerUrl>http://127.0.0.1:5052</ServerUrl>
+        <TimeoutSeconds>60</TimeoutSeconds>
+        <BeamSize>1</BeamSize>
+        <LanguageLocked>false</LanguageLocked>
+        <Language>en</Language>
+        <Model></Model>
+        <UseGpu>true</UseGpu>
+        <Translate>false</Translate>
+        <Prompt>machete, zombie, horde, trader, inventory, follow, guard, loot, knife, axe, pistol, rifle, shotgun, bandage, food, water, ammo, weapon, dismiss, hire, pickup, convertible, truck, gasoline, engine, workbench, blueprint, scrap, components, outpost, camp, safehouse, infected, symptoms, medicine, antibiotic, north, south, east, west, northeast, northwest, southeast, southwest, socket, formation, flank, take point, hold position, squad, spread out, tighten up, come closer, back off</Prompt>
+
+        <!-- Audio Recording -->
+        <SampleRate>16000</SampleRate>
+        <MaxRecordingSeconds>15</MaxRecordingSeconds>
+
+        <!-- Input -->
+        <PushToTalkKey>V</PushToTalkKey>
+
+        <!-- Microphone device name. Empty = use first available device.
+             If voice is not working, set this to your mic's exact name from the
+             boot log (e.g. <MicrophoneDevice>Microphone (Realtek Audio)</MicrophoneDevice>).
+             ASCII hyphens only in device names; Unity Mono rejects UTF-8 chars here. -->
+        <MicrophoneDevice></MicrophoneDevice>
+
+        <!-- Wake Word (hands-free) -->
+        <WakeWordEnabled>false</WakeWordEnabled>
+        <WakeWordModel>hey_marvin_v0.1</WakeWordModel>
+        <WakeWordThreshold>0.5</WakeWordThreshold>
+        <VadSilenceMs>800</VadSilenceMs>
+
+        <!-- Wake word inference thread priority.
+             Higher (AboveNormal) = snappier wake-word detection but starves CPU TTS.
+             Lower (Normal/BelowNormal) = faster TTS synth, wake-word slightly less responsive.
+             Allowed: AboveNormal, Normal, BelowNormal, Lowest. Default: Normal. -->
+        <WakeWordThreadPriority>Normal</WakeWordThreadPriority>
+
+        <!-- Max ONNX inference chunks per signal burst.
+             Under CPU contention, the ring buffer can pile up many 1280-sample chunks.
+             Draining them all at once starves TTS. This cap limits how many chunks
+             are processed per signal, leaving the rest for the next tick.
+             Throttling lower (the old 2) broke wake-word detection without fixing TTS starvation;
+             PTT-default is the real contention fix, so 4 keeps detection reliable when wake-word is opt-in.
+             Default: 4 (process up to 4 chunks then yield). Range: 1-8. -->
+        <WakeWordMaxChunksPerSignal>4</WakeWordMaxChunksPerSignal>
+
+        <!-- GPU device index for whisper-server (Vulkan). Empty = use default (device 0).
+             Set to the discrete GPU's index if an iGPU is detected first.
+             Check [whisper-server] log lines at boot to see available devices. -->
+        <WhisperGpuDevice></WhisperGpuDevice>
+    </STT>
+
+    <!-- ================================================================ -->
+    <!-- LLM: Local Language Model (llama-server)                         -->
+    <!-- ================================================================ -->
+    <LLM>
+        <Endpoint>http://127.0.0.1:5055/v1/chat/completions</Endpoint>
+        <ModelFilename></ModelFilename>
+        <Model>Qwen2.5-3B-Instruct-Q4_K_L</Model>
+        <TimeoutSeconds>30</TimeoutSeconds>
+        <MaxTokens>512</MaxTokens>
+        <Temperature>0.8</Temperature>
+
+        <!-- NPC Personality Defaults -->
+        <SystemPrompt>You are a survivor in post-apocalyptic Arizona, about seven years after the outbreak. Stay fully in character: weary from years of survival, but still capable of hope, warmth, and dark humor. You have your own goals, fears, and opinions. React to what the survivor says and to anything you remember about them. Never break character or mention being an AI.</SystemPrompt>
+        <ContextMemory>5</ContextMemory>
+
+        <!-- Response Handling -->
+        <ShowTypingIndicator>true</ShowTypingIndicator>
+        <TypingDelayMs>75</TypingDelayMs>
+        <MaxResponseLength>300</MaxResponseLength>
+
+        <!-- Actions -->
+        <ActionsEnabled>true</ActionsEnabled>
+
+        <!-- Chat Inactivity Timeout (seconds) -->
+        <ChatTimeout>30</ChatTimeout>
+
+        <!-- Wild NPC combat chat cooldown (seconds) — uninterruptible after last target dies -->
+        <WildCombatChatCooldownSeconds>5</WildCombatChatCooldownSeconds>
+
+        <!-- KV Cache / Context Window Size
+             Sets the llama-server ctx-size argument (KV cache is allocated at startup).
+             Suggested range: 2048-32768.
+               2048 (~224 MB) >>> bare minimum, very limited conversation memory
+               4096 (~448 MB) >>> 6 GB VRAM cards; use with IQ4_NL model
+               8192 (~896 MB) >>> DEFAULT; recommended for 8 GB+ VRAM
+              16384 (~1.75 GB) >>> 12 GB+ cards (RTX 3080 / 4070 Ti class)
+              32768 (~3.5 GB) >>> 16 GB+ cards (RTX 3090 / 4090 class)
+             Values above 32768 waste VRAM with no gameplay benefit for NPC dialog. -->
+        <ContextSize>8192</ContextSize>
+    </LLM>
+
+    <!-- ================================================================ -->
+    <!-- RAG: Memory extraction from conversations                        -->
+    <!-- ================================================================ -->
+    <RAG>
+        <ExtractionPrompt>You are a game lore archivist. Analyze the transcript between the SURVIVOR (player) and an NPC. Write one fact per line using one of these two prefixes:
+
+[SURVIVOR] (a fact about the player, quoted from the transcript)
+[NPC] (a fact about the NPC, quoted from the transcript)
+
+The lines above show the FORMAT ONLY - they are placeholders, not real facts. Never copy them into
+your output. Only write facts that are explicitly stated in the transcript below.
+
+ONLY extract facts in these categories:
+1. Alliances and Roles (hired, bodyguard, companion, dismissed, freed)
+2. Relationship Changes (befriending, hostility, trust)
+3. Long-term Preferences (always use melee, never loot cars)
+4. Possessions and Assets (vehicles, weapons, base locations)
+5. Significant Locations (destinations, travel routes, places of interest)
+6. Threats and Dangers (enemy positions, hazards, warnings)
+7. Plans and Orders (stay here, guard base, meet at hospital)
+
+Extract each fact once, attributed to the correct subject exactly as stated in the transcript; never mirror a fact onto the other party.
+Do not extract greetings, questions, or trivial small talk.
+Do not extract routine movement or combat commands (follow, wait, stay, come here, guard) unless they represent a permanent standing order or a strategic decision with lasting significance.
+Never extract the player's own name or what they want to be called. It is captured separately.
+Quote facts literally from the transcript — do not interpret or infer actions not stated.
+If a prefix has no applicable fact, omit that line entirely — do not write NONE for it.
+If the entire transcript contains no extractable facts, write only: NONE</ExtractionPrompt>
+        <ExtractionUserPrefix>Here is the transcript to extract:\n\n</ExtractionUserPrefix>
+
+        <!-- Extraction tuning knobs (optional - defaults shown below) -->
+        <!-- Temperature: 0.0 = deterministic, higher = more creative (0.0-2.0) -->
+        <ExtractionTemperature>0.0</ExtractionTemperature>
+        <!-- MaxExtractedFacts: cap on facts per extraction to prevent LLM hallucination bloat (min 1) -->
+        <MaxExtractedFacts>10</MaxExtractedFacts>
+
+        <!-- MinFlushMessages: skip flush if buffer has fewer messages than this (prevents 2-message NONE flushes). -->
+        <!-- Flush still fires at the 20-message cap regardless. -->
+        <MinFlushMessages>4</MinFlushMessages>
+
+        <!-- ExtractionIdleSeconds: idle time before extraction fires (default 100s). -->
+        <!-- Higher = fewer extractions during active play, lower = faster memory capture. -->
+        <!-- Extraction runs to completion — conversation serializes behind it if player speaks mid-extraction. -->
+        <ExtractionIdleSeconds>100</ExtractionIdleSeconds>
+
+        <!-- EmbeddingEndpoint: dedicated embedding server (nomic-embed-text, CPU-only, port 5056) -->
+        <!-- Ships separately from the chat model - place nomic-embed-text-v1.5.Q8_0.gguf in Resources/Models/Embed/ -->
+        <!-- If the embed server fails to start, the mod falls back to the chat server on port 5055 -->
+        <EmbeddingEndpoint>http://127.0.0.1:5056/v1/embeddings</EmbeddingEndpoint>
+    </RAG>
+
+    <!-- ================================================================ -->
+    <!-- NPCToNPC: Ambient NPC-to-NPC idle chatter                        -->
+    <!-- ================================================================ -->
+    <NPCToNPC>
+        <Enabled>true</Enabled>
+        <Range>5</Range>
+        <ScanIntervalSeconds>30</ScanIntervalSeconds>
+        <Chance>0.25</Chance>
+        <MaxLinesPerNPC>2</MaxLinesPerNPC>
+        <GlobalCooldownMinutes>5</GlobalCooldownMinutes>
+        <PairCooldownMinutes>15</PairCooldownMinutes>
+    </NPCToNPC>
+
+    <!-- ================================================================ -->
+    <!-- Billing: Weekly hire billing (buff/cvar-driven)                  -->
+    <!-- GrowthRate: cost multiplier per week (1.2 = 20% increase).       -->
+    <!-- MaxWeeks: exponent cap so cost plateaus after this many weeks.   -->
+    <!-- GraceDays: days after missed payment before auto-dismiss.        -->
+    <!-- ApprovalTimeoutDays: days with no response before grace fallback. -->
+    <!-- ================================================================ -->
+    <Billing>
+        <GrowthRate>1.2</GrowthRate>
+        <MaxWeeks>12</MaxWeeks>
+        <GraceDays>2</GraceDays>
+        <ApprovalTimeoutDays>3</ApprovalTimeoutDays>
+    </Billing>
+
+    <!-- ================================================================ -->
+    <!-- FollowAssist: catch-up teleport when a following NPC makes no    -->
+    <!-- progress (spiral stairs, tight interiors).                        -->
+    <!-- NoProgressSeconds: window with no net approach before assist.     -->
+    <!-- MinSeparation: 3D distance to leader that arms the watchdog.      -->
+    <!-- ProgressEpsilon: min distance shrink per window to count progress.--> 
+    <!-- CooldownSeconds: min time between assists per NPC.                -->
+    <!-- ================================================================ -->
+    <FollowAssist>
+        <Enabled>true</Enabled>
+        <NoProgressSeconds>5</NoProgressSeconds>
+        <MinSeparation>3.0</MinSeparation>
+        <ProgressEpsilon>0.5</ProgressEpsilon>
+        <CooldownSeconds>10</CooldownSeconds>
+    </FollowAssist>
+
+    <!-- ================================================================ -->
+    <!-- FormationDistances: slot distances keyed by vcFormationDistance  -->
+    <!-- index. Add tiers later with no code change (just XML + phrase).  -->
+    <!--   1 = tight (~2m), 2 = wide (~5m). Defaults match shipped values. -->
+    <!-- ================================================================ -->
+    <!-- Personal-space floor for the follow servo (Phase 1 yield). -->
+    <!-- When leader closes within this distance, the NPC actively backs off. -->
+    <FollowMinSeparation>1.0</FollowMinSeparation>
+
+    <!-- Tactical mode default: if true, new hires start in tactical (command-only) mode. -->
+    <!-- The player can toggle with "go tactical" / "at ease" voice commands. -->
+    <DefaultTacticalMode>false</DefaultTacticalMode>
+
+    <FormationDistances>
+        <Tier index="1" distance="2" />
+        <Tier index="2" distance="5" />
+    </FormationDistances>
+
+    <!-- ================================================================ -->
+    <!-- MP: Multiplayer version handshake policy                         -->
+    <!-- MPVersionPolicy: action when client build != server build         -->
+    <!--   warn  = log warning only (current default)                      -->
+    <!--   deny  = kick/disconnect (reserved for future Phase 2)           -->
+    <!-- ================================================================ -->
+    <MP>
+        <!-- warn | (future: deny) -->
+        <MPVersionPolicy>warn</MPVersionPolicy>
+    </MP>
+
+</XNPCVoiceControl>

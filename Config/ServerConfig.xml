@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+<!--
+    ServerConfig.xml - sherpa-server configuration only.
+
+    This file is read by the precompiled sherpa-server.exe binary at startup.
+    Do not rename or move - the path is hardcoded in the executable.
+
+    === Fields ===
+      EngineType: must be "kokoro" for the Kokoro TTS engine.
+      ModelDirectory: relative path from sherpa-server.exe to the Kokoro model folder.
+                      Resolved as: <exe_dir>/<ModelDirectory>
+                      Default points to ../../Resources/KokoroSherpa (up two levels from bin/).
+      ModelFile: name of the ONNX model file inside ModelDirectory.
+      TokensFile: name of the token vocabulary file inside ModelDirectory.
+      VoicesFile: name of the voice weights binary inside ModelDirectory.
+
+    === VoiceMap ===
+      Each <Voice> maps a user-friendly alias to a numeric ID used by sherpa-server.
+      The "id" attribute is the positional index in the voices.bin file.
+      Aliases are what you use in personalities.xml (e.g., af_heart, am_adam).
+
+      Voice ID ranges:
+        0-10   = American Female (af_*)
+        11-19  = American Male (am_*)
+        20-23  = British Female (bf_*)
+        24-27  = British Male (bm_*)
+        28     = Spanish Female (ef_*)
+        29-30  = Spanish Male (em_*)
+        31     = Finnish Female (ff_*)
+        32-33  = Hindi Female (hf_*)
+        34-35  = Hindi Male (hm_*)
+        36     = Irish Female (if_*)
+        37-40  = Japanese Female (jf_*)
+        41     = Japanese Male (jm_*)
+        42-45  = Chinese Female (zf_*)
+        46-49  = Chinese Male (zm_*)
+        50     = Irish Male (im_*)
+        51     = Polish Female (pf_*)
+        52-53  = Polish Male (pm_*)
+
+      NOTE: IDs 28-53 (accent/foreign voices) are from official v1.0 documentation.
+            Verify with /audition endpoint after swapping to v1.0 model - ordering may differ.
+
+    All other mod settings live in modconfig.xml.
+-->
+<ServerConfig>
+    <EngineType>kokoro</EngineType>
+    <ModelDirectory>..\..\Resources\KokoroSherpa</ModelDirectory>
+    <ModelFile>model.onnx</ModelFile>
+    <TokensFile>tokens.txt</TokensFile>
+    <VoicesFile>voices.bin</VoicesFile>
+
+    <VoiceMap>
+        <!-- Simple name aliases (user-friendly) -->
+        <Voice alias="Adam" id="11" />
+        <Voice alias="Michael" id="16" />
+        <Voice alias="Fenrir" id="14" />
+        <Voice alias="Sarah" id="9" />
+        <Voice alias="Bella" id="2" />
+        <Voice alias="George" id="26" />
+        <Voice alias="Emma" id="21" />
+        <Voice alias="Liam" id="15" />
+
+        <!-- American Female (0-10) -->
+        <Voice alias="af_alloy" id="0" />
+        <Voice alias="af_aoede" id="1" />
+        <Voice alias="af_bella" id="2" />
+        <Voice alias="af_heart" id="3" />
+        <Voice alias="af_jessica" id="4" />
+        <Voice alias="af_kore" id="5" />
+        <Voice alias="af_nicole" id="6" />
+        <Voice alias="af_nova" id="7" />
+        <Voice alias="af_river" id="8" />
+        <Voice alias="af_sarah" id="9" />
+        <Voice alias="af_sky" id="10" />
+
+        <!-- American Male (11-19) -->
+        <Voice alias="am_adam" id="11" />
+        <Voice alias="am_echo" id="12" />
+        <Voice alias="am_eric" id="13" />
+        <Voice alias="am_fenrir" id="14" />
+        <Voice alias="am_liam" id="15" />
+        <Voice alias="am_michael" id="16" />
+        <Voice alias="am_onyx" id="17" />
+        <Voice alias="am_puck" id="18" />
+        <Voice alias="am_santa" id="19" />
+
+        <!-- British Female (20-23) -->
+        <Voice alias="bf_alice" id="20" />
+        <Voice alias="bf_emma" id="21" />
+        <Voice alias="bf_isabella" id="22" />
+        <Voice alias="bf_lily" id="23" />
+
+        <!-- British Male (24-27) -->
+        <Voice alias="bm_daniel" id="24" />
+        <Voice alias="bm_fable" id="25" />
+        <Voice alias="bm_george" id="26" />
+        <Voice alias="bm_lewis" id="27" />
+
+        <!-- Spanish Female (28) -->
+        <Voice alias="ef_dora" id="28" />
+
+        <!-- Spanish Male (29-30) -->
+        <Voice alias="em_alex" id="29" />
+        <Voice alias="em_santa" id="30" />
+
+        <!-- Finnish Female (31) -->
+        <Voice alias="ff_siwis" id="31" />
+
+        <!-- Hindi Female (32-33) -->
+        <Voice alias="hf_alpha" id="32" />
+        <Voice alias="hf_beta" id="33" />
+
+        <!-- Hindi Male (34-35) -->
+        <Voice alias="hm_omega" id="34" />
+        <Voice alias="hm_psi" id="35" />
+
+        <!-- Irish Female (36) -->
+        <Voice alias="if_sara" id="36" />
+
+        <!-- Japanese Female (37-40) -->
+        <Voice alias="jf_alpha" id="37" />
+        <Voice alias="jf_gongitsune" id="38" />
+        <Voice alias="jf_nezumi" id="39" />
+        <Voice alias="jf_tebukuro" id="40" />
+
+        <!-- Japanese Male (41) -->
+        <Voice alias="jm_kumo" id="41" />
+
+        <!-- Chinese Female (42-45) -->
+        <Voice alias="zf_xiaobei" id="42" />
+        <Voice alias="zf_xiaoni" id="43" />
+        <Voice alias="zf_xiaoxiao" id="44" />
+        <Voice alias="zf_xiaoyi" id="45" />
+
+        <!-- Chinese Male (46-49) -->
+        <Voice alias="zm_yunjian" id="46" />
+        <Voice alias="zm_yunxi" id="47" />
+        <Voice alias="zm_yunxia" id="48" />
+        <Voice alias="zm_yunyang" id="49" />
+
+        <!-- Irish Male (50) -->
+        <Voice alias="im_nicola" id="50" />
+
+        <!-- Polish Female (51) -->
+        <Voice alias="pf_dora" id="51" />
+
+        <!-- Polish Male (52-53) -->
+        <Voice alias="pm_alex" id="52" />
+        <Voice alias="pm_santa" id="53" />
+    </VoiceMap>
+</ServerConfig>

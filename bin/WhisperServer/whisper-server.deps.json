@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "whisper-server/1.0.0": {
+        "dependencies": {
+          "Whisper.net": "1.5.0"
+        },
+        "runtime": {
+          "whisper-server.dll": {}
+        }
+      },
+      "Whisper.net/1.5.0": {
+        "runtime": {
+          "lib/net8.0/Whisper.net.dll": {
+            "assemblyVersion": "1.5.0.0",
+            "fileVersion": "1.5.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "whisper-server/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Whisper.net/1.5.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-arhpIRnaAUbGVnTBWnZ9tdLbj70KS3NUcDIIvHUpVHZ+udXx+gtVFbOXpTHNun40zclx48nWFYMDWxG712CtBQ==",
+      "path": "whisper.net/1.5.0",
+      "hashPath": "whisper.net.1.5.0.nupkg.sha512"
+    }
+  }
+}

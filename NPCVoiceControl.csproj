@@ -1,0 +1,463 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>1-XNPCVoiceControl</AssemblyName>
+    <RootNamespace>XNPCVoiceControl</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!-- Output directly to mod folder -->
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <!-- Suppress warnings about missing XML docs and Unsafe version conflict (game's MemoryPack.dll refs v6.0.0.0, NuGet ships v4.0.4.1) -->
+    <NoWarn>CS1591;CS0436;MSB3277</NoWarn>
+    
+    <!-- Define UNITY_STANDALONE_WIN for Windows builds -->
+    <DefineConstants>$(DefineConstants);UNITY_STANDALONE_WIN</DefineConstants>
+    <BaseOutputPath>.\</BaseOutputPath>
+  </PropertyGroup>
+
+  <!-- Remove stale NPCLLMChat.dll artifacts from old builds -->
+  <Target Name="CleanStaleArtifacts" BeforeTargets="Build">
+    <ItemGroup>
+      <_StaleDll Include="$(OutputPath)NPCLLMChat.dll" />
+      <_StaleDll Include="$(OutputPath)NPCLLMChat.pdb" />
+      <_StaleDll Include="$(OutputPath)Whisper.net.dll" />
+      <_StaleDll Include="$(OutputPath)whisper.dll" />
+    </ItemGroup>
+    <Delete Files="@(_StaleDll)" ContinueOnError="true" />
+  </Target>
+
+  <!-- Validate shipped XML: no em-dash or en-dash in comments, no encoding UTF-8 declaration -->
+  <Target Name="ValidateModXml" BeforeTargets="AssembleDist;Build">
+    <Message Text="=== Validating Config XML ===" Importance="high" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/../tools/Validate-ModXml.ps1&quot; -ConfigPath &quot;$(MSBuildProjectDirectory)/Config&quot;">
+      <Output TaskParameter="ExitCode" PropertyName="XmlValidationExitCode" />
+    </Exec>
+    <Error Condition="'$(XmlValidationExitCode)' != '0' AND '$(XmlValidationExitCode)' != ''" Text="Config XML validation failed! Check output above." />
+  </Target>
+
+  <!--
+    Platform-specific paths - CUSTOMIZE THESE FOR YOUR SYSTEM!
+    
+    Common Windows Steam locations:
+      - C:\Program Files (x86)\Steam\steamapps\common\7 Days To Die
+      - C:\Program Files\Steam\steamapps\common\7 Days To Die
+      - D:\SteamLibrary\steamapps\common\7 Days To Die
+  -->
+  
+  <!-- Windows paths (edit GamePath to match your installation) -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <GamePath>C:\Program Files (x86)\Steam\steamapps\common\7 Days To Die</GamePath>
+    <ManagedPath>$(GamePath)\7DaysToDie_Data\Managed</ManagedPath>
+    <SCorePath>C:\Program Files (x86)\Steam\steamapps\common\7 Days To Die\Mods\0-SCore</SCorePath>
+    <HarmonyPath>$(GamePath)\Mods\0_TFP_Harmony</HarmonyPath>
+  </PropertyGroup>
+
+  <!-- Linux paths (customize for your system) -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <GamePath>$(HOME)/.steam/steam/steamapps/common/7 Days To Die</GamePath>
+    <ManagedPath>$(GamePath)/7DaysToDie_Data/Managed</ManagedPath>
+    <SCorePath>$(GamePath)/Mods/0-SCore</SCorePath>
+    <HarmonyPath>$(GamePath)/Mods/0_TFP_Harmony</HarmonyPath>
+  </PropertyGroup>
+
+  <!-- Game Assembly References -->
+  <ItemGroup>
+    <!-- Core Unity -->
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedPath)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedPath)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>$(ManagedPath)/UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>$(ManagedPath)/UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(ManagedPath)/UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(ManagedPath)/UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ManagedPath)/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(ManagedPath)/UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ManagedPath)/UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- UnityWebRequestAudioModule for UnityWebRequestMultimedia.GetAudioClip -->
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule">
+      <HintPath>$(ManagedPath)/UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- NGUI (UILabel, UIWidget, UIPanel — needed for subtitle font assignment) -->
+    <Reference Include="NGUI">
+      <HintPath>$(ManagedPath)/NGUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- UnityEngine.TextRenderingModule (Font, Resources.Load<Font>) -->
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(ManagedPath)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- 7DTD Game Assembly -->
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(ManagedPath)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Harmony (from TFP_Harmony) -->
+    <Reference Include="0Harmony">
+      <HintPath>$(HarmonyPath)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- SCore mod (EntityUtilities, HarvestManager, EntitySyncUtils, IEntityAliveSDX) -->
+    <Reference Include="SCore">
+      <HintPath>$(SCorePath)/SCore.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Newtonsoft.Json (from game's Managed folder) -->
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedPath)/Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- System libs -->
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+
+    <!-- KokoroSharp TTS dependencies removed — TTS now runs via sherpa-server HTTP process -->
+    <!-- Whisper.net STT removed — STT now runs via whisper-server HTTP process -->
+
+    <!-- NanoWakeWord ONNX runtime -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.27.0" />
+  </ItemGroup>
+
+  <!-- Item groups for build/deploy targets -->
+  <ItemGroup>
+    <!-- Resources (models, voices, espeak data) -->
+    <ResourcesFiles Include="Resources\*" />
+    <ResourcesFiles Include="Resources\**\*" />
+  </ItemGroup>
+
+  <!-- Publish sherpa-server to bin/SherpaServer/ -->
+  <Target Name="PublishSherpaServer" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <SherpaServerProject>$(MSBuildProjectDirectory)/../sherpa-server/sherpa-server.csproj</SherpaServerProject>
+      <SherpaServerOutput>$(MSBuildProjectDirectory)/$(OutputPath)bin/SherpaServer</SherpaServerOutput>
+    </PropertyGroup>
+    <Message Text="Publishing sherpa-server to $(SherpaServerOutput)..." Importance="high" />
+    <MakeDir Directories="$(SherpaServerOutput)" />
+    <Exec Command="dotnet publish &quot;$(SherpaServerProject)&quot; -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o &quot;$(SherpaServerOutput)&quot;" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="SherpaPublishExitCode" />
+    </Exec>
+    <Message Text="sherpa-server publish exit code: $(SherpaPublishExitCode)" Importance="high" />
+  </Target>
+
+  <!-- Trim SherpaServer: remove build artifacts from self-contained single-file publish -->
+  <Target Name="TrimSherpaServer" AfterTargets="PublishSherpaServer" Condition="'$(OS)' == 'Windows_NT'">
+    <Message Text="Trimming SherpaServer bloat..." Importance="high" />
+    <!-- Remove non-Windows runtimes (we only need win-x64 for a self-contained win-x64 publish) -->
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/android" Condition="Exists('$(SherpaServerOutput)/runtimes/android')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/ios" Condition="Exists('$(SherpaServerOutput)/runtimes/ios')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/linux-arm64" Condition="Exists('$(SherpaServerOutput)/runtimes/linux-arm64')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/linux-x64" Condition="Exists('$(SherpaServerOutput)/runtimes/linux-x64')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/osx-arm64" Condition="Exists('$(SherpaServerOutput)/runtimes/osx-arm64')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/osx-x64" Condition="Exists('$(SherpaServerOutput)/runtimes/osx-x64')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/win-arm64" Condition="Exists('$(SherpaServerOutput)/runtimes/win-arm64')" />
+    <RemoveDir Directories="$(SherpaServerOutput)/runtimes/win-x86" Condition="Exists('$(SherpaServerOutput)/runtimes/win-x86')" />
+    <!-- Remove build artifacts from self-contained single-file publish -->
+    <ItemGroup>
+      <_SherpaTrim Include="$(SherpaServerOutput)/*.pdb" />
+      <_SherpaTrim Include="$(SherpaServerOutput)/*.deps.json" />
+      <_SherpaTrim Include="$(SherpaServerOutput)/*.runtimeconfig.json" />
+      <_SherpaTrim Include="$(SherpaServerOutput)/*.staticwebassets.endpoints.json" />
+    </ItemGroup>
+    <Delete Files="@(_SherpaTrim)" ContinueOnError="true" />
+  </Target>
+
+  <!-- Publish supertonic-server to bin/SupertonicServer/ -->
+  <Target Name="PublishSupertonicServer" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <SupertonicServerProject>$(MSBuildProjectDirectory)/../supertonic-server/supertonic-server.csproj</SupertonicServerProject>
+      <SupertonicServerOutput>$(MSBuildProjectDirectory)/$(OutputPath)bin/SupertonicServer</SupertonicServerOutput>
+    </PropertyGroup>
+    <Message Text="Publishing supertonic-server to $(SupertonicServerOutput)..." Importance="high" />
+    <MakeDir Directories="$(SupertonicServerOutput)" />
+    <Exec Command="dotnet publish &quot;$(SupertonicServerProject)&quot; -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o &quot;$(SupertonicServerOutput)&quot;" ContinueOnError="true">
+      <Output TaskParameter="ExitCode" PropertyName="SupertonicPublishExitCode" />
+    </Exec>
+    <Message Text="supertonic-server publish exit code: $(SupertonicPublishExitCode)" Importance="high" />
+  </Target>
+
+  <!-- Trim SupertonicServer: remove build artifacts from self-contained single-file publish -->
+  <Target Name="TrimSupertonicServer" AfterTargets="PublishSupertonicServer" Condition="'$(OS)' == 'Windows_NT'">
+    <Message Text="Trimming SupertonicServer bloat..." Importance="high" />
+    <!-- Remove non-Windows runtimes (we only need win-x64 for a self-contained win-x64 publish) -->
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/android" Condition="Exists('$(SupertonicServerOutput)/runtimes/android')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/ios" Condition="Exists('$(SupertonicServerOutput)/runtimes/ios')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/linux-arm64" Condition="Exists('$(SupertonicServerOutput)/runtimes/linux-arm64')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/linux-x64" Condition="Exists('$(SupertonicServerOutput)/runtimes/linux-x64')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/osx-arm64" Condition="Exists('$(SupertonicServerOutput)/runtimes/osx-arm64')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/osx-x64" Condition="Exists('$(SupertonicServerOutput)/runtimes/osx-x64')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/win-arm64" Condition="Exists('$(SupertonicServerOutput)/runtimes/win-arm64')" />
+    <RemoveDir Directories="$(SupertonicServerOutput)/runtimes/win-x86" Condition="Exists('$(SupertonicServerOutput)/runtimes/win-x86')" />
+    <!-- Remove build artifacts from self-contained single-file publish -->
+    <ItemGroup>
+      <_SupertonicTrim Include="$(SupertonicServerOutput)/*.pdb" />
+      <_SupertonicTrim Include="$(SupertonicServerOutput)/*.deps.json" />
+      <_SupertonicTrim Include="$(SupertonicServerOutput)/*.runtimeconfig.json" />
+      <_SupertonicTrim Include="$(SupertonicServerOutput)/*.staticwebassets.endpoints.json" />
+      <_SupertonicTrim Include="$(SupertonicServerOutput)/*.lib" />
+    </ItemGroup>
+    <Delete Files="@(_SupertonicTrim)" ContinueOnError="true" />
+  </Target>
+
+  <!-- Ship MSVC runtime app-local next to supertonic-server.exe so ONNX doesn't grab a stale copy from System32 -->
+  <Target Name="ShipSupertonicVcRuntime" AfterTargets="TrimSupertonicServer" Condition="'$(OS)' == 'Windows_NT'">
+    <Message Text="Shipping MSVC runtime to SupertonicServer..." Importance="high" />
+    <ItemGroup>
+      <_VcDlls Include="$(SystemRoot)/System32/vcruntime140.dll;$(SystemRoot)/System32/vcruntime140_1.dll;$(SystemRoot)/System32/msvcp140.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_VcDlls)" DestinationFolder="$(SupertonicServerOutput)" SkipUnchangedFiles="true" ContinueOnError="true" />
+  </Target>
+
+  <!-- Copy llama-server to bin/LlamaServer/ -->
+  <Target Name="CopyLlamaServer" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <LlamaServerSource>$(MSBuildProjectDirectory)/LlamaServer</LlamaServerSource>
+      <LlamaServerOutput>$(MSBuildProjectDirectory)/$(OutputPath)bin/LlamaServer</LlamaServerOutput>
+    </PropertyGroup>
+    <Message Text="Copying llama-server to $(LlamaServerOutput)..." Importance="high" />
+    <MakeDir Directories="$(LlamaServerOutput)" />
+    <ItemGroup>
+      <LlamaServerFiles Include="$(LlamaServerSource)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LlamaServerFiles)" DestinationFiles="@(LlamaServerFiles->'$(LlamaServerOutput)/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!-- Trim LlamaServer: remove benchmark/utility DLLs not needed at runtime -->
+  <Target Name="TrimLlamaServer" AfterTargets="CopyLlamaServer" Condition="'$(OS)' == 'Windows_NT'">
+    <Message Text="Trimming LlamaServer bloat..." Importance="high" />
+    <ItemGroup>
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-batched-bench-impl.dll" />
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-bench-impl.dll" />
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-cli-impl.dll" />
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-completion-impl.dll" />
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-fit-params-impl.dll" />
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-perplexity-impl.dll" />
+      <_LlamaTrim Include="$(LlamaServerOutput)/llama-quantize-impl.dll" />
+    </ItemGroup>
+    <Delete Files="@(_LlamaTrim)" ContinueOnError="true" />
+  </Target>
+
+  <!-- Copy whisper-server to bin/WhisperServer/ -->
+  <Target Name="CopyWhisperServer" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <WhisperServerSource>$(MSBuildProjectDirectory)/WhisperServer</WhisperServerSource>
+      <WhisperServerOutput>$(MSBuildProjectDirectory)/$(OutputPath)bin/WhisperServer</WhisperServerOutput>
+    </PropertyGroup>
+    <Message Text="Copying whisper-server to $(WhisperServerOutput)..." Importance="high" />
+    <MakeDir Directories="$(WhisperServerOutput)" />
+    <ItemGroup>
+      <WhisperServerFiles Include="$(WhisperServerSource)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WhisperServerFiles)" DestinationFiles="@(WhisperServerFiles->'$(WhisperServerOutput)/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <!-- Trim WhisperServer: remove .pdb and staticwebassets metadata -->
+  <!-- KEEP .deps.json and .runtimeconfig.json — whisper-server is framework-dependent and needs them to launch -->
+  <Target Name="TrimWhisperServer" AfterTargets="CopyWhisperServer" Condition="'$(OS)' == 'Windows_NT'">
+    <Message Text="Trimming WhisperServer bloat..." Importance="high" />
+    <ItemGroup>
+      <_WhisperTrim Include="$(WhisperServerOutput)/*.pdb" />
+      <_WhisperTrim Include="$(WhisperServerOutput)/*.staticwebassets.endpoints.json" />
+    </ItemGroup>
+    <Delete Files="@(_WhisperTrim)" ContinueOnError="true" />
+  </Target>
+
+  <!-- Ship wake-word ONNX + MSVC runtime into Plugins/OnnxRuntime/ so NativeLibrary.Load pins the correct DLL -->
+  <Target Name="ShipWakeWordOnnxRuntime" AfterTargets="TrimWhisperServer" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <WakeWordOnnxOutput>$(MSBuildProjectDirectory)/$(OutputPath)Plugins/OnnxRuntime</WakeWordOnnxOutput>
+    </PropertyGroup>
+    <Message Text="Shipping wake-word ONNX runtime to Plugins/OnnxRuntime..." Importance="high" />
+    <MakeDir Directories="$(WakeWordOnnxOutput)" />
+    <!-- Copy ONNX native DLLs from Plugins/ root -->
+    <ItemGroup>
+      <_OnnxDlls Include="$(MSBuildProjectDirectory)/Plugins/onnxruntime.dll;$(MSBuildProjectDirectory)/Plugins/onnxruntime_providers_shared.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_OnnxDlls)" DestinationFolder="$(WakeWordOnnxOutput)" SkipUnchangedFiles="true" ContinueOnError="true" />
+    <!-- Copy MSVC runtime app-local so ONNX doesn't grab a stale copy from System32 -->
+    <ItemGroup>
+      <_VcDlls Include="$(SystemRoot)/System32/vcruntime140.dll;$(SystemRoot)/System32/vcruntime140_1.dll;$(SystemRoot)/System32/msvcp140.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_VcDlls)" DestinationFolder="$(WakeWordOnnxOutput)" SkipUnchangedFiles="true" ContinueOnError="true" />
+  </Target>
+
+  <!-- Copy DLL to mod folder after build -->
+  <Target Name="CopyToModFolder" AfterTargets="Build">
+    <Message Text="Build complete! DLL at: $(OutputPath)$(AssemblyName).dll" Importance="high" />
+    <Message Text="Copy to your 7DTD Mods folder to install." Importance="high" />
+    <!-- Copy Resources to output directory (recursive) -->
+    <ItemGroup>
+      <_AllResourceFiles Include="$(MSBuildProjectDirectory)/Resources/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AllResourceFiles->'%(FullPath)')" DestinationFiles="@(_AllResourceFiles->'$(OutputPath)Resources/%(RecursiveDir)%(Filename)%(Extension)')" />
+
+    <!-- Copy Config XMLs to output directory (so servers find them at ../../Config/) -->
+    <ItemGroup>
+      <_AllConfigFiles Include="$(MSBuildProjectDirectory)/Config/*.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AllConfigFiles)" DestinationFolder="$(OutputPath)Config" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Assemble dist/ — clean, drift-proof mod package assembled after all staging targets -->
+  <Target Name="AssembleDist" AfterTargets="ShipWakeWordOnnxRuntime;CopyToModFolder">
+    <PropertyGroup>
+      <DistDir>$(MSBuildProjectDirectory)/../dist</DistDir>
+    </PropertyGroup>
+    <Message Text="=== Assembling dist/ ===" Importance="high" />
+
+    <!-- (a) Fresh start: wipe then recreate -->
+    <RemoveDir Directories="$(DistDir)" ContinueOnError="true" />
+    <MakeDir Directories="$(DistDir)" />
+    <MakeDir Directories="$(DistDir)/Config/XUi_InGame" />
+    <MakeDir Directories="$(DistDir)/Plugins/OnnxRuntime" />
+    <MakeDir Directories="$(DistDir)/bin/SherpaServer" />
+    <MakeDir Directories="$(DistDir)/bin/SupertonicServer" />
+    <MakeDir Directories="$(DistDir)/bin/LlamaServer" />
+    <MakeDir Directories="$(DistDir)/bin/WhisperServer" />
+
+    <!-- (b) ALLOWLIST copies — nothing sneaks in -->
+
+    <!-- Managed DLLs + main mod DLL from build output -->
+    <ItemGroup>
+      <_DistDlls Include="$(OutputPath)1-XNPCVoiceControl.dll;$(OutputPath)Microsoft.ML.OnnxRuntime.dll;$(OutputPath)System.Buffers.dll;$(OutputPath)System.Memory.dll;$(OutputPath)System.Numerics.Vectors.dll;$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistDlls)" DestinationFolder="$(DistDir)" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- ModInfo.xml -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/ModInfo.xml" DestinationFolder="$(DistDir)" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- Config/*.xml (8 files) + Localization.txt + ReadMeFirst.md -->
+    <ItemGroup>
+      <_DistConfig Include="$(MSBuildProjectDirectory)/Config/modconfig.xml;$(MSBuildProjectDirectory)/Config/ServerConfig.xml;$(MSBuildProjectDirectory)/Config/SupertonicConfig.xml;$(MSBuildProjectDirectory)/Config/personalities.xml;$(MSBuildProjectDirectory)/Config/phrasetriggers.xml;$(MSBuildProjectDirectory)/Config/utilityai.xml;$(MSBuildProjectDirectory)/Config/buffs.xml;$(MSBuildProjectDirectory)/Config/dialogs.xml;$(MSBuildProjectDirectory)/Config/Localization.csv;$(MSBuildProjectDirectory)/Config/ReadMeFirst.md" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistConfig)" DestinationFolder="$(DistDir)/Config" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- Config/XUi_InGame/{windows,xui}.xml -->
+    <ItemGroup>
+      <_DistXUi Include="$(MSBuildProjectDirectory)/Config/XUi_InGame/windows.xml;$(MSBuildProjectDirectory)/Config/XUi_InGame/xui.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistXUi)" DestinationFolder="$(DistDir)/Config/XUi_InGame" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- Plugins/OnnxRuntime/** (native onnxruntime + vcruntime) -->
+    <ItemGroup>
+      <_DistOnnx Include="$(OutputPath)Plugins/OnnxRuntime/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistOnnx->'%(FullPath)')" DestinationFiles="@(_DistOnnx->'$(DistDir)/Plugins/OnnxRuntime/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- bin/SherpaServer/** -->
+    <ItemGroup>
+      <_DistSherpa Include="$(OutputPath)bin/SherpaServer/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistSherpa->'%(FullPath)')" DestinationFiles="@(_DistSherpa->'$(DistDir)/bin/SherpaServer/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- bin/SupertonicServer/** -->
+    <ItemGroup>
+      <_DistSuper Include="$(OutputPath)bin/SupertonicServer/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistSuper->'%(FullPath)')" DestinationFiles="@(_DistSuper->'$(DistDir)/bin/SupertonicServer/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- bin/LlamaServer/** -->
+    <ItemGroup>
+      <_DistLlama Include="$(OutputPath)bin/LlamaServer/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistLlama->'%(FullPath)')" DestinationFiles="@(_DistLlama->'$(DistDir)/bin/LlamaServer/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- bin/WhisperServer/** -->
+    <ItemGroup>
+      <_DistWhisper Include="$(OutputPath)bin/WhisperServer/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DistWhisper->'%(FullPath)')" DestinationFiles="@(_DistWhisper->'$(DistDir)/bin/WhisperServer/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <!-- (c) Resources: multi-GB models NOT copied, write README instead -->
+    <ItemGroup>
+      <_ReadmeLine Include="# Model Resources" />
+      <_ReadmeLine Include="#" />
+      <_ReadmeLine Include="These model files are not included in the build output." />
+      <_ReadmeLine Include="Copy them from your local model cache into this directory:" />
+      <_ReadmeLine Include="#" />
+      <_ReadmeLine Include="## Resources/KokoroSherpa/ (TTS)" />
+      <_ReadmeLine Include="#   model.onnx       - Kokoro-82M-v1.0 multi-language TTS (~325MB)" />
+      <_ReadmeLine Include="#   voices.bin       - Voice speaker embeddings (~26MB)" />
+      <_ReadmeLine Include="#   tokens.txt       - Token vocabulary" />
+      <_ReadmeLine Include="#   lexicon-us-en.txt, lexicon-gb-en.txt, lexicon-zh.txt" />
+      <_ReadmeLine Include="#   dict/            - Japanese phonemizer data" />
+      <_ReadmeLine Include="#   espeak-ng-data/  - eSpeak NG data" />
+      <_ReadmeLine Include="#" />
+      <_ReadmeLine Include="## Resources/WakeWord/models/ (wake-word detection)" />
+      <_ReadmeLine Include="#   embedding_model.onnx    - Embedding extractor" />
+      <_ReadmeLine Include="#   hey_marvin_v0.1.onnx    - &quot;Hey Marvin&quot; wake word model" />
+      <_ReadmeLine Include="#   melspectrogram.onnx     - Mel spectrogram preprocessor" />
+      <_ReadmeLine Include="#" />
+      <_ReadmeLine Include="## Resources/Models/Llama/ (LLM)" />
+      <_ReadmeLine Include="#   Llama-3.2-3B-Instruct-IQ4_NL.gguf  - GGUF chat model (~1.8GB)" />
+      <_ReadmeLine Include="#" />
+      <_ReadmeLine Include="## Resources/Models/Embed/ (RAG embeddings)" />
+      <_ReadmeLine Include="#   nomic-embed-text-v1.5.Q8_0.gguf  - GGUF embedding model (~139MB)" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(DistDir)/Resources/README.txt" Lines="@(_ReadmeLine)" Overwrite="true" />
+
+    <Message Text="dist/ assembled complete." Importance="high" />
+  </Target>
+
+  <!-- Optional: Auto-deploy to game mods folder (overlay dist/ into live Mods, never delete) -->
+  <Target Name="DeployToGame" AfterTargets="AssembleDist" Condition="'$(DeployToGame)' == 'true'">
+    <PropertyGroup>
+      <ModsFolder>$(GamePath)/Mods/1-XNPCVoiceControl</ModsFolder>
+    </PropertyGroup>
+    <Message Text="=== Deploying dist/ to $(ModsFolder) ===" Importance="high" />
+    <MakeDir Directories="$(ModsFolder)" />
+
+    <!-- Overlay-copy everything from dist/ into live Mods folder; SkipUnchangedFiles=true, NO delete -->
+    <!-- Exclude Resources/ — models are managed separately, README leaks next to real files -->
+    <ItemGroup>
+      <_DeployAll Include="$(MSBuildProjectDirectory)/../dist/**/*" />
+      <_DeployAll Remove="$(MSBuildProjectDirectory)/../dist/Resources/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DeployAll->'%(FullPath)')" DestinationFiles="@(_DeployAll->'$(ModsFolder)/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+
+    <Message Text="Deploy complete (overlay from dist/, no deletes)." Importance="high" />
+  </Target>
+
+
+
+</Project>

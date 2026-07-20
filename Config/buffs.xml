@@ -1,0 +1,18 @@
+<configs>
+	<!-- Cap RandomIdle cvar to 0-5 so it never rolls the gesture values (9 or 10) -->
+	<set xpath="/buffs/buff[@name='RandomIdle']/effect_group[@name='RandomIdle']/triggered_effect[@trigger='onSelfBuffUpdate'][@action='ModifyCVar'][@cvar='RandomIdle']/@value">randomint(0,5)</set>
+
+	<!-- Remove the effect_groups that would set IdleVar=1 or IdleVar=2 randomly.
+	     The mod owns these values for meaningful head gestures (nod/shake on command). -->
+	<remove xpath="/buffs/buff[@name='RandomIdle2']/effect_group[requirement[@name='CVarCompare'][@cvar='RandomIdle'][@operation='Equals'][@value='9']]"/>
+	<remove xpath="/buffs/buff[@name='RandomIdle2']/effect_group[requirement[@name='CVarCompare'][@cvar='RandomIdle'][@operation='Equals'][@value='10']]"/>
+
+	<!-- Jump command cooldown buff — applied declaratively via OnStartAddBuffs on the task tag.
+	     Blocks re-selection of JumpUp/JumpDown for 2 seconds after any exit (success or failure). -->
+	<append xpath="/buffs">
+		<buff name="XVC_JumpCooldown">
+			<stack_type value="ignore"/>
+			<duration value="2"/>
+		</buff>
+	</append>
+</configs>
