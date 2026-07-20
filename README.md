@@ -4,9 +4,7 @@ A voice-command and AI-conversation mod for **7 Days to Die** (built on **0-SCor
 your hired NPCs by voice — squad and positioning commands, or a real conversation powered by a **local**
 LLM, speech-to-text, and text-to-speech (no cloud, no API keys).
 
-> **This repo is the complete, runnable mod** — sidecar servers, DLLs, and config included. The only thing
-> not in git is **5 large model files** (>100 MB) — grab them from **[Releases](../../releases)** per
-> **[MODELS.md](MODELS.md)**.
+> **This repo is the complete, runnable mod** — sidecar servers, DLLs, and config included. You need to add an ai model in .gguf format into the mods resources/Llama/Models folder. A small model suitable for a 6 gig vram gpu is an additional download file in this repo.  Better AI is recommended for better chats. 
 
 ## Features (v3.0.x)
 
@@ -17,17 +15,6 @@ LLM, speech-to-text, and text-to-speech (no cloud, no API keys).
 - **Local AI conversation:** LLM chat with per-NPC personality + RAG memory; local STT (whisper) and TTS
   (Supertonic + Kokoro).
 - **Single-player + dedicated-server** support.
-
-## Install (run it)
-
-1. **Clone** this repo (or download the ZIP).
-2. **Download the 5 models** from **[Releases](../../releases)** and place each at its path — see
-   **[MODELS.md](MODELS.md)**.
-3. **Copy the whole folder** into `…\7 Days To Die\Mods\1-XNPCVoiceControl\`.
-4. Ensure **0-SCore** and **0_TFP_Harmony** are also installed as mods.
-5. Launch — the mod auto-starts the local STT/TTS/LLM servers on first use.
-
-**Requirements:** Windows, a mic, a GPU with **≥6 GB VRAM** (8 GB+ recommended).
 
 ## Build from source (optional)
 
